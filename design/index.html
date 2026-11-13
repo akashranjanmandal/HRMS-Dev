@@ -82,17 +82,29 @@ table.t { border-collapse: collapse; width: 100%; font-size: var(--text-sm); }
 .page-h h3 { font-family: var(--font-display); font-size: var(--text-2xl); margin: 0; line-height: 1.1; }
 .page-h p { margin: 4px 0 0; color: var(--ink-soft); font-size: var(--text-sm); }
 
-/* ---------- phone shell ---------- */
-.phone { flex: none; width: 360px; height: 740px; border-radius: 36px; border: 10px solid #1d2426; background: var(--bg); overflow: hidden; display: grid; grid-template-rows: 30px 1fr 64px; box-shadow: var(--shadow); }
-.status { display: flex; justify-content: space-between; align-items: center; padding: 0 20px; font-size: 12px; font-weight: 600; }
-.pbody { padding: 12px 16px; display: grid; gap: 14px; align-content: start; overflow: hidden; }
-.pbar { display: grid; grid-template-columns: repeat(5, 1fr); border-top: 1px solid var(--line); background: var(--surface); }
-.pbar a { display: grid; justify-items: center; align-content: center; gap: 3px; font-size: 10.5px; font-weight: 600; color: var(--ink-faint); text-decoration: none; }
-.pbar a svg { width: 20px; height: 20px; }
-.pbar a.on { color: var(--primary); }
+/* ---------- mobile web shell: a real phone browser, not an app ---------- */
+.phone { flex: none; width: 380px; height: 760px; border-radius: 28px; border: 8px solid #20272a; background: #0c1012; overflow: hidden; display: grid; grid-template-rows: 1fr 40px; box-shadow: var(--shadow); }
+.browser { display: grid; grid-template-rows: 26px 40px 1fr; background: var(--bg); overflow: hidden; }
+.os-bar { display: flex; justify-content: space-between; align-items: center; padding: 0 18px; font-size: 11px; font-weight: 600; color: #e9edee; background: #0c1012; }
+.url-bar { display: flex; align-items: center; gap: 8px; padding: 0 10px; background: var(--surface-2); border-bottom: 1px solid var(--line); }
+.url-bar .lock { width: 13px; height: 13px; color: var(--ink-faint); flex: none; }
+.url-pill { flex: 1; height: 26px; border-radius: 99px; background: var(--surface); display: flex; align-items: center; gap: 6px; padding: 0 10px; font-size: 12px; color: var(--ink-soft); overflow: hidden; white-space: nowrap; }
+.url-pill svg { width: 12px; height: 12px; flex: none; color: var(--ink-faint); }
+.pbody { padding: 0; display: grid; grid-template-rows: 48px 1fr 60px; overflow: hidden; min-height: 0; }
+.mtop { display: flex; align-items: center; gap: 10px; padding: 0 16px; border-bottom: 1px solid var(--line); background: var(--surface); }
+.mtop b { font-family: var(--font-display); font-size: 17px; flex: 1; }
+.mscroll { padding: 14px 16px 18px; display: grid; gap: 14px; align-content: start; overflow-y: auto; min-height: 0; }
+.tabbar { display: grid; grid-template-columns: repeat(5, 1fr); align-items: center; border-top: 1px solid var(--line); background: var(--surface); }
+.tabbar a { display: grid; justify-items: center; align-content: center; gap: 2px; font-size: 10.5px; font-weight: 600; color: var(--ink-faint); text-decoration: none; position: relative; }
+.tabbar a svg { width: 21px; height: 21px; }
+.tabbar a.on { color: var(--primary); }
+.tabbar a .n { position: absolute; top: -2px; right: calc(50% - 20px); min-width: 15px; height: 15px; padding: 0 3px; border-radius: 99px; background: var(--accent); color: #fff; font-size: 9px; font-weight: 700; display: grid; place-items: center; }
+.chrome-bar { display: flex; align-items: center; justify-content: space-between; padding: 0 22px; background: var(--surface); border-top: 1px solid var(--line); }
+.chrome-bar svg { width: 19px; height: 19px; color: var(--ink-faint); }
+.chrome-bar .mid { width: 22px; height: 22px; border: 2px solid var(--ink-faint); border-radius: 5px; }
 .ph-title { display: flex; align-items: center; justify-content: space-between; }
-.ph-title h4 { margin: 0; font-family: var(--font-display); font-size: 22px; }
-.phone-cap { font-size: var(--text-sm); color: var(--ink-soft); margin-top: 8px; max-width: 360px; }
+.ph-title h4 { margin: 0; font-family: var(--font-display); font-size: 20px; }
+.phone-cap { font-size: var(--text-sm); color: var(--ink-soft); margin-top: 8px; max-width: 380px; }
 .mini-map { border-radius: var(--radius); overflow: hidden; border: 1px solid var(--line); }
 .mini-map svg, .big-map svg { display: block; width: 100%; height: auto; }
 .row { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: var(--text-sm); }
@@ -185,8 +197,8 @@ table.t { border-collapse: collapse; width: 100%; font-size: var(--text-sm); }
 <div class="board">
   <header class="intro">
     <h1>Aaranyak HRMS: screen designs for approval</h1>
-    <p>Seven key screens, shown with sample data. Desktop screens are what HR, Finance and Division Heads use; phone screens are what field staff use in a phone browser. Colours, type and components here become the real app.</p>
-    <div class="key"><span><b>Desktop:</b> slim side menu, scope switcher, global search</span><span><b>Phone:</b> bottom tabs, one big action per screen</span><span><b>All names and figures are samples</b></span></div>
+    <p>Seven key screens, shown with sample data. This is one responsive website — no Android or iOS app, matching the RFP's "web application only" requirement. Desktop screens are what HR, Finance and Division Heads use on a laptop; mobile screens are the <strong>same site</strong>, open in a phone's browser, which is how field staff use it. The bottom tab bar on mobile is a layout choice inside the page, not evidence of a native app — the browser's own address bar stays visible around it, and the site can optionally be saved to the home screen as a shortcut (a PWA), which still runs in the browser engine. Colours, type and components here become the real site.</p>
+    <div class="key"><span><b>Desktop:</b> slim side menu, scope switcher, global search</span><span><b>Mobile web:</b> bottom tab bar, one big action per screen, runs inside a phone browser — not an installed app</span><span><b>All names and figures are samples</b></span></div>
   </header>
 
   <!-- 1 SIGN-IN -->
@@ -224,73 +236,150 @@ table.t { border-collapse: collapse; width: 100%; font-size: var(--text-sm); }
 
   <!-- 2 FIELD CHECK-IN -->
   <section class="art">
-    <div class="art-head"><h2>Field check-in</h2><span>phone · geo-fence + selfie</span></div>
+    <div class="art-head"><h2>Field check-in</h2><span>mobile web · geo-fence + selfie</span></div>
     <div class="phones">
       <div>
         <div class="phone">
-          <div class="status"><span>9:12</span><span>●●● 4G</span></div>
-          <div class="pbody">
-            <div class="ph-title"><h4>Good morning, Rahul</h4><div class="av">RB</div></div>
-            <div class="mini-map">
-              <svg viewBox="0 0 320 170"><rect width="320" height="170" fill="var(--surface-2)"/><path d="M0 120 C 70 100, 120 140, 190 118 S 290 90, 320 104 L 320 132 C 280 120, 220 150, 160 146 S 50 132, 0 150 Z" fill="var(--primary-tint)"/><polygon points="90,30 230,24 252,96 168,124 80,98" fill="var(--primary)" fill-opacity=".14" stroke="var(--primary)" stroke-width="2"/><circle cx="168" cy="70" r="22" fill="var(--primary)" fill-opacity=".15"/><circle cx="168" cy="70" r="7" fill="var(--primary)" stroke="var(--surface)" stroke-width="3"/><text x="100" y="20" font-size="11" fill="var(--ink-soft)" font-family="Public Sans">Kaziranga Field Station</text></svg>
-            </div>
-            <div class="card" style="padding:16px;display:grid;gap:10px">
-              <div class="check"><i data-lucide="circle-check" class="ok-ic"></i><span><b>Inside</b> Kaziranga Field Station</span></div>
-              <div class="check"><i data-lucide="crosshair" class="ok-ic"></i><span>Location accuracy ±12 m</span></div>
-              <div class="check"><i data-lucide="clock" class="faint"></i><span>Shift 9:00 – 17:30</span></div>
-            </div>
-            <button class="btn btn-primary btn-lg"><i data-lucide="camera"></i>Check in with selfie</button>
+          <div class="browser">
+          <div class="os-bar"><span>9:12</span><span>4G ●●●</span></div>
+          <div class="url-bar">
+            <i data-lucide="lock" class="lock"></i>
+            <span class="url-pill"><i data-lucide="globe"></i>hrms.aaranyak.org/attendance</span>
+            <i data-lucide="rotate-cw" style="width:14px;height:14px;color:var(--ink-faint)"></i>
           </div>
-          <div class="pbar"><a class="on"><i data-lucide="house"></i>Home</a><a><i data-lucide="calendar-days"></i>Leave</a><a><i data-lucide="inbox"></i>Requests</a><a><i data-lucide="wallet"></i>Pay</a><a><i data-lucide="user"></i>Me</a></div>
+          <div class="pbody">
+            <div class="mtop"><b>Good morning, Rahul</b><div class="av">RB</div></div>
+            <div class="mscroll">
+              <div class="mini-map">
+                <svg viewBox="0 0 320 170"><rect width="320" height="170" fill="var(--surface-2)"/><path d="M0 120 C 70 100, 120 140, 190 118 S 290 90, 320 104 L 320 132 C 280 120, 220 150, 160 146 S 50 132, 0 150 Z" fill="var(--primary-tint)"/><polygon points="90,30 230,24 252,96 168,124 80,98" fill="var(--primary)" fill-opacity=".14" stroke="var(--primary)" stroke-width="2"/><circle cx="168" cy="70" r="22" fill="var(--primary)" fill-opacity=".15"/><circle cx="168" cy="70" r="7" fill="var(--primary)" stroke="var(--surface)" stroke-width="3"/><text x="100" y="20" font-size="11" fill="var(--ink-soft)" font-family="Public Sans">Kaziranga Field Station</text></svg>
+              </div>
+              <div class="card" style="padding:16px;display:grid;gap:10px">
+                <div class="check"><i data-lucide="circle-check" class="ok-ic"></i><span><b>Inside</b> Kaziranga Field Station</span></div>
+                <div class="check"><i data-lucide="crosshair" class="ok-ic"></i><span>Location accuracy ±12 m</span></div>
+                <div class="check"><i data-lucide="clock" class="faint"></i><span>Shift 9:00 – 17:30</span></div>
+              </div>
+              <button class="btn btn-primary btn-lg"><i data-lucide="camera"></i>Check in with selfie</button>
+            </div>
+            <div class="tabbar">
+              <a class="on"><i data-lucide="house"></i>Home</a>
+              <a><i data-lucide="calendar-days"></i>Leave</a>
+              <a><i data-lucide="inbox"></i>Requests<span class="n">2</span></a>
+              <a><i data-lucide="wallet"></i>Pay</a>
+              <a><i data-lucide="user"></i>Me</a>
+            </div>
+          </div>
+          <div class="chrome-bar">
+            <i data-lucide="arrow-left"></i>
+            <i data-lucide="arrow-right"></i>
+            <i data-lucide="plus"></i>
+            <span class="mid"></span>
+            <i data-lucide="more-horizontal"></i>
+          </div>
         </div>
         <p class="phone-cap"><b>1. Location check.</b> The phone's GPS must be inside the site boundary, with good accuracy, before the button turns on.</p>
       </div>
 
       <div>
         <div class="phone">
-          <div class="status"><span>9:13</span><span>●●● 4G</span></div>
+          <div class="browser">
+          <div class="os-bar"><span>9:13</span><span>4G ●●●</span></div>
+          <div class="url-bar">
+            <i data-lucide="lock" class="lock"></i>
+            <span class="url-pill"><i data-lucide="globe"></i>hrms.aaranyak.org/attendance/selfie</span>
+            <i data-lucide="rotate-cw" style="width:14px;height:14px;color:var(--ink-faint)"></i>
+          </div>
           <div class="pbody">
-            <div class="ph-title"><h4>Take a selfie</h4><span class="chip chip-ok">Inside boundary</span></div>
-            <div class="selfie"><div class="oval"></div><div class="tip">Fit your face in the oval</div></div>
+            <div class="mtop"><i data-lucide="x" style="width:20px;height:20px;color:var(--ink-soft)"></i><b>Take a selfie</b><span class="chip chip-ok">Inside boundary</span></div>
+            <div class="mscroll">
+              <div class="selfie"><div class="oval"></div><div class="tip">Fit your face in the oval</div></div>
             <div class="shutter" role="img" aria-label="Capture"></div>
             <p class="faint" style="margin:0;text-align:center;font-size:var(--text-xs)">Saved with the time and location. Compressed to about 100 KB.</p>
+            </div>
           </div>
-          <div class="pbar"><a class="on"><i data-lucide="house"></i>Home</a><a><i data-lucide="calendar-days"></i>Leave</a><a><i data-lucide="inbox"></i>Requests</a><a><i data-lucide="wallet"></i>Pay</a><a><i data-lucide="user"></i>Me</a></div>
+          <div class="chrome-bar">
+            <i data-lucide="arrow-left"></i>
+            <i data-lucide="arrow-right"></i>
+            <i data-lucide="plus"></i>
+            <span class="mid"></span>
+            <i data-lucide="more-horizontal"></i>
+          </div>
         </div>
         <p class="phone-cap"><b>2. Selfie.</b> Uses the front camera in the browser; no app to install.</p>
       </div>
 
       <div>
         <div class="phone">
-          <div class="status"><span>9:13</span><span>●●● 4G</span></div>
+          <div class="browser">
+          <div class="os-bar"><span>9:13</span><span>4G ●●●</span></div>
+          <div class="url-bar">
+            <i data-lucide="lock" class="lock"></i>
+            <span class="url-pill"><i data-lucide="globe"></i>hrms.aaranyak.org/attendance</span>
+            <i data-lucide="rotate-cw" style="width:14px;height:14px;color:var(--ink-faint)"></i>
+          </div>
           <div class="pbody">
-            <div class="ph-title"><h4>Checked in</h4><span class="chip chip-ok">On time</span></div>
-            <div class="card" style="padding:16px;display:grid;gap:14px">
+            <div class="mtop"><b>Checked in</b><span class="chip chip-ok">On time</span></div>
+            <div class="mscroll">
+              <div class="card" style="padding:16px;display:grid;gap:14px">
               <div class="stamp"><div class="thumb"></div><div><div class="big-time num">9:13</div><div class="muted" style="font-size:var(--text-sm)">Thu, 13 Nov · Kaziranga Field Station</div></div></div>
               <div class="row"><span class="muted">Location</span><span class="num">26.5775° N, 93.1711° E</span></div>
               <div class="row"><span class="muted">Accuracy</span><span>±12 m</span></div>
             </div>
             <button class="btn btn-ghost btn-lg"><i data-lucide="log-out"></i>Check out</button>
             <div class="card" style="padding:14px;display:grid;gap:6px"><span class="label">This month</span><div class="row"><span>Present</span><b class="num">9 days</b></div><div class="row"><span>Field duty</span><b class="num">2 days</b></div></div>
+            </div>
+            <div class="tabbar">
+              <a class="on"><i data-lucide="house"></i>Home</a>
+              <a><i data-lucide="calendar-days"></i>Leave</a>
+              <a><i data-lucide="inbox"></i>Requests<span class="n">2</span></a>
+              <a><i data-lucide="wallet"></i>Pay</a>
+              <a><i data-lucide="user"></i>Me</a>
+            </div>
           </div>
-          <div class="pbar"><a class="on"><i data-lucide="house"></i>Home</a><a><i data-lucide="calendar-days"></i>Leave</a><a><i data-lucide="inbox"></i>Requests</a><a><i data-lucide="wallet"></i>Pay</a><a><i data-lucide="user"></i>Me</a></div>
+          <div class="chrome-bar">
+            <i data-lucide="arrow-left"></i>
+            <i data-lucide="arrow-right"></i>
+            <i data-lucide="plus"></i>
+            <span class="mid"></span>
+            <i data-lucide="more-horizontal"></i>
+          </div>
         </div>
         <p class="phone-cap"><b>3. Done.</b> Check-out works the same way, with location; the selfie is optional on check-out.</p>
       </div>
 
       <div>
         <div class="phone">
-          <div class="status"><span>8:40</span><span>●● 3G</span></div>
+          <div class="browser">
+          <div class="os-bar"><span>8:40</span><span>4G ●●●</span></div>
+          <div class="url-bar">
+            <i data-lucide="lock" class="lock"></i>
+            <span class="url-pill"><i data-lucide="globe"></i>hrms.aaranyak.org/attendance</span>
+            <i data-lucide="rotate-cw" style="width:14px;height:14px;color:var(--ink-faint)"></i>
+          </div>
           <div class="pbody">
-            <div class="ph-title"><h4>Outside a site</h4><span class="chip chip-warn">Field duty</span></div>
-            <div class="mini-map">
+            <div class="mtop"><b>Outside a site</b><span class="chip chip-warn">Field duty</span></div>
+            <div class="mscroll">
+              <div class="mini-map">
               <svg viewBox="0 0 320 150"><rect width="320" height="150" fill="var(--surface-2)"/><polygon points="40,20 140,18 150,80 60,92" fill="var(--primary)" fill-opacity=".12" stroke="var(--primary)" stroke-width="2"/><circle cx="238" cy="96" r="7" fill="var(--accent)" stroke="var(--surface)" stroke-width="3"/><line x1="150" y1="70" x2="232" y2="94" stroke="var(--accent)" stroke-dasharray="4 4" stroke-width="1.5"/><text x="168" y="126" font-size="11" fill="var(--ink-soft)" font-family="Public Sans">4.2 km from Manas Range Office</text></svg>
             </div>
             <div class="field"><label>Reason for field duty</label><div class="input" style="height:76px;align-items:flex-start;padding-top:10px">Camera-trap check, Bhuyanpara range</div></div>
             <div class="field"><label>Approver</label><div class="input">Dr. Ananta Saikia (PI)</div></div>
             <button class="btn btn-primary btn-lg"><i data-lucide="camera"></i>Check in as field duty</button>
+            </div>
+            <div class="tabbar">
+              <a class="on"><i data-lucide="house"></i>Home</a>
+              <a><i data-lucide="calendar-days"></i>Leave</a>
+              <a><i data-lucide="inbox"></i>Requests<span class="n">2</span></a>
+              <a><i data-lucide="wallet"></i>Pay</a>
+              <a><i data-lucide="user"></i>Me</a>
+            </div>
           </div>
-          <div class="pbar"><a class="on"><i data-lucide="house"></i>Home</a><a><i data-lucide="calendar-days"></i>Leave</a><a><i data-lucide="inbox"></i>Requests</a><a><i data-lucide="wallet"></i>Pay</a><a><i data-lucide="user"></i>Me</a></div>
+          <div class="chrome-bar">
+            <i data-lucide="arrow-left"></i>
+            <i data-lucide="arrow-right"></i>
+            <i data-lucide="plus"></i>
+            <span class="mid"></span>
+            <i data-lucide="more-horizontal"></i>
+          </div>
         </div>
         <p class="phone-cap"><b>4. Outside every boundary.</b> Staff give a reason; the attendance counts once their supervisor approves.</p>
       </div>
@@ -406,14 +495,21 @@ table.t { border-collapse: collapse; width: 100%; font-size: var(--text-sm); }
 
   <!-- 5 LEAVE -->
   <section class="art">
-    <div class="art-head"><h2>Leave</h2><span>phone · staff</span></div>
+    <div class="art-head"><h2>Leave</h2><span>mobile web · staff</span></div>
     <div class="phones">
       <div>
         <div class="phone">
-          <div class="status"><span>18:05</span><span>●●● 4G</span></div>
+          <div class="browser">
+          <div class="os-bar"><span>18:05</span><span>4G ●●●</span></div>
+          <div class="url-bar">
+            <i data-lucide="lock" class="lock"></i>
+            <span class="url-pill"><i data-lucide="globe"></i>hrms.aaranyak.org/leave</span>
+            <i data-lucide="rotate-cw" style="width:14px;height:14px;color:var(--ink-faint)"></i>
+          </div>
           <div class="pbody">
-            <div class="ph-title"><h4>Leave</h4><button class="btn btn-primary btn-sm"><i data-lucide="plus"></i>Apply</button></div>
-            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+            <div class="mtop"><b>Leave</b><button class="btn btn-primary btn-sm"><i data-lucide="plus"></i>Apply</button></div>
+            <div class="mscroll">
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
               <div class="kpi" style="padding:12px"><span class="label">Casual</span><b class="num" style="font-size:24px">8</b><small>of 12</small></div>
               <div class="kpi" style="padding:12px"><span class="label">Earned</span><b class="num" style="font-size:24px">21</b><small>of 30</small></div>
               <div class="kpi" style="padding:12px"><span class="label">Medical</span><b class="num" style="font-size:24px">10</b><small>of 10</small></div>
@@ -422,24 +518,52 @@ table.t { border-collapse: collapse; width: 100%; font-size: var(--text-sm); }
             <div class="card" style="padding:14px;display:grid;gap:8px"><div class="row"><b>Casual · 2 days</b><span class="chip chip-warn">Level 1 of 2</span></div><span class="muted" style="font-size:var(--text-sm)">20 – 21 Nov · Family function</span></div>
             <div class="card" style="padding:14px;display:grid;gap:8px"><div class="row"><b>Earned · 5 days</b><span class="chip chip-ok">Approved</span></div><span class="muted" style="font-size:var(--text-sm)">2 – 6 Oct · by Dr. Ananta Saikia</span></div>
             <div class="card" style="padding:14px;display:grid;gap:8px"><div class="row"><b>Casual · 1 day</b><span class="chip chip-info">Returned</span></div><span class="muted" style="font-size:var(--text-sm)">“Please attach the field-trip note”</span><button class="btn btn-ghost btn-sm" style="justify-self:start">Edit and resend</button></div>
+            </div>
+            <div class="tabbar">
+              <a><i data-lucide="house"></i>Home</a>
+              <a class="on"><i data-lucide="calendar-days"></i>Leave</a>
+              <a><i data-lucide="inbox"></i>Requests<span class="n">2</span></a>
+              <a><i data-lucide="wallet"></i>Pay</a>
+              <a><i data-lucide="user"></i>Me</a>
+            </div>
           </div>
-          <div class="pbar"><a><i data-lucide="house"></i>Home</a><a class="on"><i data-lucide="calendar-days"></i>Leave</a><a><i data-lucide="inbox"></i>Requests</a><a><i data-lucide="wallet"></i>Pay</a><a><i data-lucide="user"></i>Me</a></div>
+          <div class="chrome-bar">
+            <i data-lucide="arrow-left"></i>
+            <i data-lucide="arrow-right"></i>
+            <i data-lucide="plus"></i>
+            <span class="mid"></span>
+            <i data-lucide="more-horizontal"></i>
+          </div>
         </div>
         <p class="phone-cap">Balances first. A returned application can be fixed and sent again instead of starting over.</p>
       </div>
       <div>
         <div class="phone">
-          <div class="status"><span>18:06</span><span>●●● 4G</span></div>
+          <div class="browser">
+          <div class="os-bar"><span>18:06</span><span>4G ●●●</span></div>
+          <div class="url-bar">
+            <i data-lucide="lock" class="lock"></i>
+            <span class="url-pill"><i data-lucide="globe"></i>hrms.aaranyak.org/leave/apply</span>
+            <i data-lucide="rotate-cw" style="width:14px;height:14px;color:var(--ink-faint)"></i>
+          </div>
           <div class="pbody">
-            <div class="ph-title"><h4>Apply for leave</h4><i data-lucide="x"></i></div>
-            <div class="field"><label>Leave type</label><div class="input">Casual leave · 8 days left</div></div>
+            <div class="mtop"><b>Apply for leave</b><i data-lucide="x"></i></div>
+            <div class="mscroll">
+              <div class="field"><label>Leave type</label><div class="input">Casual leave · 8 days left</div></div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div class="field"><label>From</label><div class="input">20 Nov</div></div><div class="field"><label>To</label><div class="input">21 Nov</div></div></div>
             <div class="card" style="padding:12px;background:var(--primary-tint);border-color:transparent"><div class="row"><span>Working days</span><b>2</b></div><div class="row"><span>Balance after</span><b>6</b></div></div>
             <div class="field"><label>Reason</label><div class="input" style="height:76px;align-items:flex-start;padding-top:10px">Family function</div></div>
             <div class="field"><label>Goes to</label><div class="steps"><span class="s"><i data-lucide="user"></i>Dr. Ananta Saikia</span><span class="sep"></span><span class="s">Division Head</span></div></div>
             <button class="btn btn-primary btn-lg">Submit</button>
+            </div>
           </div>
-          <div class="pbar"><a><i data-lucide="house"></i>Home</a><a class="on"><i data-lucide="calendar-days"></i>Leave</a><a><i data-lucide="inbox"></i>Requests</a><a><i data-lucide="wallet"></i>Pay</a><a><i data-lucide="user"></i>Me</a></div>
+          <div class="chrome-bar">
+            <i data-lucide="arrow-left"></i>
+            <i data-lucide="arrow-right"></i>
+            <i data-lucide="plus"></i>
+            <span class="mid"></span>
+            <i data-lucide="more-horizontal"></i>
+          </div>
         </div>
         <p class="phone-cap">The form shows the balance after this request and who will approve it, before it is sent.</p>
       </div>
