@@ -1,0 +1,66 @@
+/* Aaranyak HRMS design tokens.
+   Shared by the design prototypes and the Next.js app (imported once in globals.css).
+   Light values on :root; dark values follow the system setting unless the user picks a theme. */
+:root {
+  /* colour */
+  --bg: #f4f4ef;
+  --surface: #ffffff;
+  --surface-2: #ecede6;
+  --ink: #1a2124;
+  --ink-soft: #4a5558;
+  --ink-faint: #7b8689;
+  --line: #d9dbd2;
+  --primary: #0e6b6b;          /* river teal */
+  --primary-ink: #ffffff;
+  --primary-tint: #dcecea;
+  --accent: #c47e12;           /* golden langur amber */
+  --accent-tint: #f6e8cf;
+  --ok: #2f7a4b;
+  --ok-tint: #dff0e4;
+  --warn: #a76a00;
+  --warn-tint: #f7ebd2;
+  --bad: #b23b25;
+  --bad-tint: #f7e0db;
+
+  /* type */
+  --font-display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", sans-serif;
+  --font-body: "Public Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --text-xs: 12px;
+  --text-sm: 13.5px;
+  --text-md: 15px;
+  --text-lg: 18px;
+  --text-xl: 24px;
+  --text-2xl: 32px;
+
+  /* shape and space */
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 16px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --shadow: 0 1px 2px rgb(20 30 32 / 0.06), 0 4px 16px rgb(20 30 32 / 0.06);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1517; --surface: #172024; --surface-2: #1e2a2e; --ink: #e5ebea; --ink-soft: #b1bdbc;
+    --ink-faint: #7f8d8d; --line: #2c3a3e; --primary: #4bb3aa; --primary-ink: #0b1a1a; --primary-tint: #173634;
+    --accent: #e3a43b; --accent-tint: #3a2e17; --ok: #5fbf83; --ok-tint: #18301f; --warn: #e2a648;
+    --warn-tint: #352a14; --bad: #ec7d66; --bad-tint: #3a1d17;
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 4px 16px rgb(0 0 0 / 0.3);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1517; --surface: #172024; --surface-2: #1e2a2e; --ink: #e5ebea; --ink-soft: #b1bdbc;
+  --ink-faint: #7f8d8d; --line: #2c3a3e; --primary: #4bb3aa; --primary-ink: #0b1a1a; --primary-tint: #173634;
+  --accent: #e3a43b; --accent-tint: #3a2e17; --ok: #5fbf83; --ok-tint: #18301f; --warn: #e2a648;
+  --warn-tint: #352a14; --bad: #ec7d66; --bad-tint: #3a1d17;
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 4px 16px rgb(0 0 0 / 0.3);
+  color-scheme: dark;
+}

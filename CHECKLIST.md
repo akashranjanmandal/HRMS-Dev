@@ -5,11 +5,11 @@ Rule: an item is ticked only when its tests pass. UI is built only after the cli
 
 ## Phase 0 — Setup
 - [x] 0.1 Project folder with its own git repository
-- [x] 0.2 Backend core reused from the AVFU build (config, database, security, permissions, audit, schema sync, file storage, Excel export, request lifecycle) and the test harness
+- [x] 0.2 Backend core reused from the AVFU build (config, database, security, permission guards, audit, schema sync, file storage, Excel export) and the test harness
 
 ## Phase 1 — Designs for client approval
-- [ ] 1.1 Design tokens (colour, type, spacing) in `design/tokens.css`, later used by the frontend as-is
-- [ ] 1.2 Screens: sign-in with email code, field staff check-in (geo-fence + selfie), HR dashboard, geo-fence map, leave, Approvals Center, employee profile
+- [x] 1.1 Design tokens (colour, type, spacing) in `design/tokens.css`, later used by the frontend as-is
+- [x] 1.2 Screens: sign-in with email code, field staff check-in (geo-fence + selfie), HR dashboard, geo-fence map, leave, Approvals Center, employee profile
 - [ ] 1.3 Client sign-off on the designs
 
 ## Phase 2 — Foundation
