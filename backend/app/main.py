@@ -6,6 +6,7 @@ from app.core.config import settings
 from app.core.database import SessionLocal, engine
 from app.core.rbac_sync import sync_rbac
 from app.models import Base
+from app.routers import organisation
 
 Base.metadata.create_all(bind=engine)
 sync_enum_types(engine, Base)
@@ -22,7 +23,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-ROUTERS: list = []
+ROUTERS = [organisation.router]
 for r in ROUTERS:
     app.include_router(r)
 
