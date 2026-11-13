@@ -8,22 +8,13 @@ import pytest
 pytestmark = pytest.mark.integration
 
 
-def _admin_role(db):
-    from app.models import Permission, Role
-    role = Role(code="admin", name="System Administrator", is_system=True)
-    role.permissions = db.query(Permission).all()
-    db.add(role)
-    db.flush()
-    return role
-
-
 def _login(db, client, role_code="admin"):
+    """A logged-in user holding one of the real RFP roles, synced onto the
+    test database by ``sync_rbac`` at app startup (see app/main.py)."""
     from app.core.security import create_access_token, hash_password
     from app.models import Role, User
 
-    role = db.query(Role).filter_by(code=role_code).first()
-    if role is None:
-        role = _admin_role(db) if role_code == "admin" else None
+    role = db.query(Role).filter_by(code=role_code).one()
     user = User(email=f"{role_code}@aaranyak.org", hashed_password=hash_password("Passw0rd!1"), role_id=role.id)
     db.add(user)
     db.commit()
@@ -69,6 +60,28 @@ def test_deactivate_division_keeps_it_but_hides_from_default_list(client, db):
 
 def test_unauthenticated_request_is_401(client):
     assert client.get("/api/divisions").status_code == 401
+
+
+def test_field_staff_cannot_create_a_division(client, db):
+    headers, _ = _login(db, client, role_code="field_staff")
+    r = client.post("/api/divisions", json={"name": "Rogue Division", "code": "ROG"}, headers=headers)
+    assert r.status_code == 403
+
+
+def test_field_staff_has_no_reason_to_browse_the_division_master(client, db):
+    """Field staff only need attendance/leave self-service; browsing the
+    organisation master is an HR/Admin/Division-Head concern."""
+    headers, _ = _login(db, client, role_code="field_staff")
+    assert client.get("/api/divisions", headers=headers).status_code == 403
+
+
+def test_division_head_can_view_divisions(client, db):
+    admin_headers, _ = _login(db, client, role_code="admin")
+    client.post("/api/divisions", json={"name": "Rhino Research", "code": "RHN"}, headers=admin_headers)
+
+    head_headers, _ = _login(db, client, role_code="division_head")
+    rows = client.get("/api/divisions", headers=head_headers).json()
+    assert [d["name"] for d in rows] == ["Rhino Research"]
 
 
 # ----------------------------------------------------------------- projects
@@ -180,6 +193,25 @@ def test_check_point_on_site_without_geofence_is_404(client, db):
     site = client.post("/api/sites", json={"name": "Guwahati Head Office", "kind": "office"}, headers=headers).json()
     r = client.post(f"/api/sites/{site['id']}/check-point", json={"lat": 1, "lng": 1}, headers=headers)
     assert r.status_code == 404
+
+
+def test_check_point_is_usable_by_field_staff(client, db):
+    """Field staff call this on every check-in — it must not need
+    organisation-admin rights, only the ability to mark attendance."""
+    admin_headers, _ = _login(db, client, role_code="admin")
+    site = client.post(
+        "/api/sites",
+        json={
+            "name": "Kaziranga Field Station",
+            "kind": "field",
+            "geofence": {"shape": "circle", "center_lat": 26.5775, "center_lng": 93.1711, "radius_m": 150},
+        },
+        headers=admin_headers,
+    ).json()
+
+    field_headers, _ = _login(db, client, role_code="field_staff")
+    r = client.post(f"/api/sites/{site['id']}/check-point", json={"lat": 26.5775, "lng": 93.1711}, headers=field_headers)
+    assert r.status_code == 200 and r.json()["inside"] is True
 
 
 def test_site_can_be_linked_to_a_division(client, db):
