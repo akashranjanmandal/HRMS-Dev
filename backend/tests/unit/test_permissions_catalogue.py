@@ -70,3 +70,16 @@ def test_segregation_of_duties_hr_cannot_manage_roles():
     the System Administrator manages roles themselves."""
     hr = next(r for r in DEFAULT_ROLES if r[0] == "hr_admin")
     assert "role:admin" not in hr[3]
+
+
+def test_confidential_employee_data_has_its_own_permission():
+    """Restricted bank/statutory fields are gated by a permission distinct
+    from ordinary employee:view, so viewing a record and seeing its
+    confidential fields are two separate grants."""
+    all_codes = {p[0] for p in PERMISSIONS}
+    assert "employee_confidential:view" in all_codes
+
+
+def test_confidential_employee_permission_held_only_by_hr_finance_admin():
+    holders = {r[0] for r in DEFAULT_ROLES if "employee_confidential:view" in r[3]}
+    assert holders == {"admin", "hr_admin", "finance"}

@@ -25,6 +25,28 @@ class Scope(str, Enum):
     own = "own"
 
 
+# Which scope each RFP role implies, derived from the role code rather
+# than stored redundantly on the user — a role's reach can never drift
+# out of sync with its own definition. An unrecognised role gets the most
+# restrictive scope, never the most permissive.
+_ROLE_SCOPE: dict[str, Scope] = {
+    "admin": Scope.organisation,
+    "hr_admin": Scope.organisation,
+    "finance": Scope.organisation,
+    "executive": Scope.organisation,
+    "other_authorised": Scope.organisation,
+    "division_head": Scope.division,
+    "project_lead": Scope.project,
+    "coordinator": Scope.project,
+    "project_staff": Scope.own,
+    "field_staff": Scope.own,
+}
+
+
+def scope_for_role(role_code: str) -> Scope:
+    return _ROLE_SCOPE.get(role_code, Scope.own)
+
+
 def scope_allows_division(scope: Scope, *, user_division_id: int | None, target_division_id: int) -> bool:
     """Can a user with this scope act on something in ``target_division_id``?"""
     if scope == Scope.organisation:

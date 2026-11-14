@@ -73,6 +73,17 @@ class User(Base):
     otp_hash: Mapped[str] = mapped_column(String(255), default="")
     otp_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
+    # The one division this login is scoped to, when their role implies
+    # Scope.division (a Division Head) — see app.core.scope.scope_for_role.
+    # None for an organisation-scoped role, and also None for an
+    # unassigned Division Head, who then sees nothing, never everything.
+    # use_alter: divisions.head_user_id already points at users.id, so
+    # this is a genuine circular FK between the two tables — without
+    # use_alter, SQLAlchemy cannot pick a creation order for either table.
+    division_id: Mapped[int | None] = mapped_column(
+        ForeignKey("divisions.id", use_alter=True, name="fk_user_division"), nullable=True
+    )
+
     role: Mapped[Role] = relationship(back_populates="users", lazy="selectin")
 
     def has_permission(self, code: str) -> bool:

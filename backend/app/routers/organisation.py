@@ -29,6 +29,7 @@ from app.schemas.organisation import (
     SiteUpdate,
 )
 from app.services.geofence import haversine_m, point_in_polygon
+from app.services.organisation import get_division_or_400
 
 router = APIRouter(tags=["Organisation"])
 
@@ -97,8 +98,7 @@ def list_projects(
 
 @router.post("/api/projects", response_model=ProjectOut, status_code=status.HTTP_201_CREATED)
 def create_project(payload: ProjectIn, db: Session = Depends(get_db), user: User = Depends(CREATE)):
-    if db.get(Division, payload.division_id) is None:
-        raise HTTPException(status_code=400, detail="Division not found")
+    get_division_or_400(db, payload.division_id)
     project = Project(**payload.model_dump())
     db.add(project)
     db.commit()
@@ -189,8 +189,8 @@ def list_sites(
 
 @router.post("/api/sites", response_model=SiteOut, status_code=status.HTTP_201_CREATED)
 def create_site(payload: SiteIn, db: Session = Depends(get_db), user: User = Depends(CREATE)):
-    if payload.division_id is not None and db.get(Division, payload.division_id) is None:
-        raise HTTPException(status_code=400, detail="Division not found")
+    if payload.division_id is not None:
+        get_division_or_400(db, payload.division_id)
     site = Site(name=payload.name, kind=payload.kind, division_id=payload.division_id, address=payload.address)
     _apply_geofence(site, payload.geofence)
     db.add(site)

@@ -29,6 +29,12 @@ class ModuleDef:
 # (key, group, label, actions)
 MODULE_DEFS: list[ModuleDef] = [
     ModuleDef("employee", "People", "Employee records", ("view", "create", "edit", "delete", "export")),
+    # Bank/payment and statutory (PAN, Aadhaar, PF, ESI) fields, RFP 4.1 —
+    # "access controls are required for confidential employee information".
+    # A separate permission from employee:view, not a flag on employee:view
+    # itself, so seeing a record and seeing its confidential fields are two
+    # distinct grants that can never be confused for one another.
+    ModuleDef("employee_confidential", "People", "Bank and statutory details", ("view", "edit")),
     ModuleDef("organisation", "People", "Divisions, projects, sites", ("view", "create", "edit", "delete")),
     ModuleDef("recruitment", "People", "Recruitment and hiring", ("view", "create", "edit", "delete", "approve")),
     ModuleDef("onboarding", "People", "Onboarding and orientation", ("view", "create", "edit", "approve")),
@@ -84,7 +90,11 @@ def _codes(*, modules: tuple[str, ...] = MODULES, actions: tuple[str, ...] | Non
 # The 10 RFP roles (Section 9). Each tuple: (code, name, description,
 # permission codes, is_system, is_hidden).
 # ---------------------------------------------------------------------------
-_VIEW_ALL = _codes(actions=("view",))
+# Confidential data is excluded from the blanket "view everything" bundle:
+# Executive Management and Other Authorised (auditors/donors) see every
+# module's ordinary data, but not bank/statutory details, which only
+# admin/hr_admin/finance hold explicitly below.
+_VIEW_ALL = _codes(modules=tuple(m for m in MODULES if m != "employee_confidential"), actions=("view",))
 
 _HR_ADMIN_PERMS = [c for c in _ALL_CODES if c not in _codes(modules=("role",), actions=("admin",))]
 
@@ -102,15 +112,21 @@ _COORDINATOR_PERMS = _codes(
     modules=("attendance", "leave", "document"), actions=("view", "create", "edit")
 ) + _codes(modules=("employee", "asset", "report"), actions=("view",))
 
+# Both self-service roles get employee:view too — scoped down to "own
+# record only" by Scope.own (see app/routers/employee.py), it is what lets
+# someone see their own profile at all; without it even their own My
+# Profile screen 403s.
 _PROJECT_STAFF_PERMS = _codes(
     modules=("attendance", "leave", "asset", "document"), actions=("view", "create")
-)
+) + _codes(modules=("employee",), actions=("view",))
 
-_FIELD_STAFF_PERMS = _codes(modules=("attendance", "leave"), actions=("view", "create"))
+_FIELD_STAFF_PERMS = _codes(modules=("attendance", "leave"), actions=("view", "create")) + _codes(
+    modules=("employee",), actions=("view",)
+)
 
 _FINANCE_PERMS = _codes(
     modules=("payroll", "report"), actions=("view", "create", "edit", "approve", "export")
-) + _codes(modules=("employee", "asset"), actions=("view",))
+) + _codes(modules=("employee", "asset", "employee_confidential"), actions=("view",))
 
 _EXECUTIVE_PERMS = _VIEW_ALL + _codes(modules=("report",), actions=("export",))
 
