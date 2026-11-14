@@ -22,6 +22,17 @@ class Settings(BaseSettings):
     ORG_NAME: str = "Aaranyak"
     TIMEZONE: str = "Asia/Kolkata"
 
+    # Email. SMTP_HOST empty (the default) means dev/test mode: every
+    # message is recorded in app.services.mailer.OUTBOX instead of being
+    # sent, so local development and the test suite never need a real
+    # mail server. Set SMTP_HOST (and the rest, as needed) to send for real.
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 587
+    SMTP_USE_TLS: bool = True
+    SMTP_USERNAME: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_FROM: str = "Aaranyak HRMS <noreply@aaranyak.org>"
+
     @property
     def cors_origins_list(self) -> list[str]:
         return [o.strip() for o in self.CORS_ORIGINS.split(",") if o.strip()]
