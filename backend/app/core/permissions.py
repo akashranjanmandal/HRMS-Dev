@@ -114,7 +114,11 @@ _FINANCE_PERMS = _codes(
 
 _EXECUTIVE_PERMS = _VIEW_ALL + _codes(modules=("report",), actions=("export",))
 
-DEFAULT_ROLES: list[tuple[str, str, str, list[str], bool, bool]] = [
+# (code, name, description, permissions, is_system, is_hidden, requires_mfa)
+# requires_mfa is True only for roles that routinely see confidential data
+# (salary, bank, statutory IDs) — RFP 3.7, 13's "two step login... where
+# roles see salary/ID data".
+DEFAULT_ROLES: list[tuple[str, str, str, list[str], bool, bool, bool]] = [
     (
         "admin",
         "System Administrator",
@@ -122,6 +126,7 @@ DEFAULT_ROLES: list[tuple[str, str, str, list[str], bool, bool]] = [
         list(_ALL_CODES),
         True,
         False,
+        True,
     ),
     (
         "hr_admin",
@@ -130,6 +135,7 @@ DEFAULT_ROLES: list[tuple[str, str, str, list[str], bool, bool]] = [
         _HR_ADMIN_PERMS,
         True,
         False,
+        True,
     ),
     (
         "finance",
@@ -138,6 +144,7 @@ DEFAULT_ROLES: list[tuple[str, str, str, list[str], bool, bool]] = [
         _FINANCE_PERMS,
         True,
         False,
+        True,
     ),
     (
         "executive",
@@ -145,6 +152,7 @@ DEFAULT_ROLES: list[tuple[str, str, str, list[str], bool, bool]] = [
         "Organisation-wide read access and exportable reports; no editing rights.",
         _EXECUTIVE_PERMS,
         True,
+        False,
         False,
     ),
     (
@@ -154,6 +162,7 @@ DEFAULT_ROLES: list[tuple[str, str, str, list[str], bool, bool]] = [
         _DIVISION_HEAD_PERMS,
         True,
         False,
+        False,
     ),
     (
         "project_lead",
@@ -161,6 +170,7 @@ DEFAULT_ROLES: list[tuple[str, str, str, list[str], bool, bool]] = [
         "Approves for their own project(s): attendance, leave, assets, reports.",
         _PROJECT_LEAD_PERMS,
         True,
+        False,
         False,
     ),
     (
@@ -170,6 +180,7 @@ DEFAULT_ROLES: list[tuple[str, str, str, list[str], bool, bool]] = [
         _COORDINATOR_PERMS,
         True,
         False,
+        False,
     ),
     (
         "project_staff",
@@ -177,6 +188,7 @@ DEFAULT_ROLES: list[tuple[str, str, str, list[str], bool, bool]] = [
         "Self-service: own attendance, leave, assets and documents.",
         _PROJECT_STAFF_PERMS,
         True,
+        False,
         False,
     ),
     (
@@ -186,6 +198,7 @@ DEFAULT_ROLES: list[tuple[str, str, str, list[str], bool, bool]] = [
         _FIELD_STAFF_PERMS,
         True,
         False,
+        False,
     ),
     (
         "other_authorised",
@@ -193,6 +206,7 @@ DEFAULT_ROLES: list[tuple[str, str, str, list[str], bool, bool]] = [
         "View-only access granted case by case (e.g. auditors, donors).",
         _VIEW_ALL,
         True,
+        False,
         False,
     ),
 ]

@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.security import decode_token
-from app.models import Role, User
+from app.models import Role, Session as SessionModel, User
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/token", auto_error=False)
 
@@ -31,6 +31,16 @@ def get_current_user(
     user_id = payload.get("sub")
     if user_id is None:
         raise CRED_EXC
+
+    # A token logged out (revoked) is refused even though its JWT signature
+    # and expiry are still valid — see app.models.Session. A token with no
+    # session row at all (minted outside the login flow) is unaffected.
+    jti = payload.get("jti")
+    if jti is not None:
+        session_row = db.query(SessionModel).filter(SessionModel.jti == jti).first()
+        if session_row is not None and session_row.revoked_at is not None:
+            raise CRED_EXC
+
     user = db.query(User).filter(User.id == int(user_id)).first()
     if user is None or not user.is_active:
         raise CRED_EXC

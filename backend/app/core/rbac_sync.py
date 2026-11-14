@@ -11,6 +11,13 @@ runs on every startup and only ever *adds*:
 
 Permissions that already exist are left alone on every role, so anything
 an Administrator removed from a role in the Roles screen stays removed.
+
+``requires_mfa`` is different: it is a security policy, not a grantable
+permission, so it is re-applied from ``DEFAULT_ROLES`` on every system
+role every run — an Administrator cannot silently weaken MFA on a
+confidential-data role by forgetting it was ever set. A non-system
+(custom) role's ``requires_mfa`` is never touched here; the Administrator
+who creates a custom role sets it explicitly.
 """
 from sqlalchemy.orm import Session
 
@@ -29,7 +36,7 @@ def sync_rbac(db: Session) -> None:
             new_codes.add(code)
     db.flush()
 
-    for code, name, description, permission_codes, is_system, is_hidden in DEFAULT_ROLES:
+    for code, name, description, permission_codes, is_system, is_hidden, requires_mfa in DEFAULT_ROLES:
         role = db.query(Role).filter(Role.code == code).first()
         if role is None:
             db.add(
@@ -39,10 +46,13 @@ def sync_rbac(db: Session) -> None:
                     description=description,
                     is_system=is_system,
                     is_hidden=is_hidden,
+                    requires_mfa=requires_mfa,
                     permissions=[existing[c] for c in permission_codes],
                 )
             )
             continue
+        if is_system:
+            role.requires_mfa = requires_mfa
         held = {p.code for p in role.permissions}
         for c in permission_codes:
             if c in new_codes and c not in held:

@@ -31,12 +31,19 @@ def verify_password(plain: str, hashed: str) -> bool:
         return False
 
 
-def create_access_token(data: dict) -> str:
+def create_access_token(data: dict, jti: str | None = None) -> str:
+    """Issue a JWT. Every token carries a ``jti`` (generated if not given)
+    so a session row can later be created for it and, on logout, revoked —
+    see ``app.models.Session`` and ``app.core.deps.get_current_user``. A
+    token minted with no matching session row is still accepted (so code
+    that only needs a bearer token, not logout tracking, is unaffected);
+    only a row that exists *and is revoked* invalidates the token early.
+    """
     to_encode = data.copy()
     expire = datetime.now(timezone.utc) + timedelta(
         minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
     )
-    to_encode.update({"exp": expire})
+    to_encode.update({"exp": expire, "jti": jti or secrets.token_urlsafe(16)})
     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 
@@ -71,6 +78,25 @@ def reset_token_expiry() -> datetime:
     return datetime.now(timezone.utc) + timedelta(
         minutes=settings.RESET_TOKEN_EXPIRE_MINUTES
     )
+
+
+# --- email one-time code (MFA) ----------------------------------------------
+def generate_otp() -> str:
+    """A 6-digit one-time code, sent by email (RFP 3.7, 13: optional
+    two-step login) for roles that see confidential data."""
+    return f"{secrets.randbelow(1_000_000):06d}"
+
+
+def hash_otp(code: str) -> str:
+    return hashlib.sha256(code.encode("utf-8")).hexdigest()
+
+
+def verify_otp(code: str, hashed: str) -> bool:
+    return secrets.compare_digest(hash_otp(code), hashed)
+
+
+def otp_expiry() -> datetime:
+    return datetime.now(timezone.utc) + timedelta(minutes=10)
 
 
 def password_strength_error(password: str, min_length: int | None = None) -> str | None:

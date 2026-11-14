@@ -21,10 +21,15 @@ def log(
     summary: str = "",
     detail: dict | None = None,
     ip: str = "",
+    actor_email: str | None = None,
 ) -> AuditLog:
+    """``actor_email`` lets a caller record who an action was *attempted
+    by* when there is no authenticated ``User`` row to attach — e.g. a
+    failed login for an email that does exist, logged before any session
+    starts."""
     entry = AuditLog(
         actor_user_id=actor.id if actor else None,
-        actor_email=actor.email if actor else "",
+        actor_email=actor_email if actor_email is not None else (actor.email if actor else ""),
         action=action,
         entity_type=entity_type,
         entity_id=str(entity_id) if entity_id != "" else "",

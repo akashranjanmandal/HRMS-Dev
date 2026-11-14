@@ -35,6 +35,10 @@ class Role(Base):
     is_system: Mapped[bool] = mapped_column(Boolean, default=False)
     is_hidden: Mapped[bool] = mapped_column(Boolean, default=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    # Email one-time code required after password, on top of it (RFP 3.7,
+    # 13: "optional two-step login"). A system policy, not a personal
+    # choice — set true for roles that see confidential data.
+    requires_mfa: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
     permissions: Mapped[list[Permission]] = relationship(
@@ -64,9 +68,34 @@ class User(Base):
     reset_token_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
+    # One-time code (MFA), issued after a correct password for a role with
+    # requires_mfa. Cleared once verified or once a fresh one is issued.
+    otp_hash: Mapped[str] = mapped_column(String(255), default="")
+    otp_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
     role: Mapped[Role] = relationship(back_populates="users", lazy="selectin")
 
     def has_permission(self, code: str) -> bool:
         if not self.is_active or self.role is None or not self.role.is_active:
             return False
         return any(p.code == code for p in self.role.permissions)
+
+
+class Session(Base):
+    """A signed-in session, keyed by the JWT's own id (``jti``).
+
+    JWTs are stateless by design, so "log out" needs a server-side record
+    of which tokens are still valid — this table is it. ``get_current_user``
+    checks a token's ``jti`` is present and not revoked here before trusting
+    it; ``/auth/logout`` revokes it. Expired/old rows are left for the
+    administrator to prune on a schedule — not needed for correctness, only
+    for table size.
+    """
+
+    __tablename__ = "sessions"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    jti: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

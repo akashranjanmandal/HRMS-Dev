@@ -48,3 +48,15 @@ def test_sync_never_removes_an_administrators_own_customisation(db):
     db.refresh(hr)
     assert removed.code not in hr.permission_codes
     assert len(hr.permissions) == original_count - 1
+
+
+def test_sync_sets_requires_mfa_for_confidential_roles(db):
+    sync_rbac(db)
+    admin = db.query(Role).filter_by(code="admin").one()
+    hr = db.query(Role).filter_by(code="hr_admin").one()
+    finance = db.query(Role).filter_by(code="finance").one()
+    field_staff = db.query(Role).filter_by(code="field_staff").one()
+    assert admin.requires_mfa is True
+    assert hr.requires_mfa is True
+    assert finance.requires_mfa is True
+    assert field_staff.requires_mfa is False

@@ -38,7 +38,8 @@ def test_ten_rfp_roles_are_defined():
 
 def test_role_permission_codes_all_exist_in_the_catalogue():
     all_codes = {p[0] for p in PERMISSIONS}
-    for code, _name, _desc, perms, _is_system, _is_hidden in DEFAULT_ROLES:
+    for role in DEFAULT_ROLES:
+        code, perms = role[0], role[3]
         unknown = set(perms) - all_codes
         assert not unknown, f"Role '{code}' references unknown permissions: {unknown}"
 

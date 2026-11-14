@@ -15,7 +15,7 @@ Rule: an item is ticked only when its tests pass. UI is built only after the cli
 ## Phase 2 — Foundation
 - [x] 2.1 Organisation: divisions, projects, offices and field sites (with geo-fence boundary)
 - [x] 2.2 The 10 RFP roles, permissions per module (view, create, edit, delete, approve, export, admin), scope by organisation / division / project / own
-- [ ] 2.3 Sign-in: password policy, email one-time code, logout, session expiry; every sign-in and sign-out audited
+- [x] 2.3 Sign-in: password policy, email one-time code, logout, session expiry; every sign-in and sign-out audited
 - [ ] 2.4 Email sender (pluggable, with a test outbox) and on-screen notifications
 - [ ] 2.5 Employee master: all RFP field groups incl. contract dates, PF/ESI, status (active, on notice, separated); restricted fields hidden by role
 

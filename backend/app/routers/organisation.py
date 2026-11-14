@@ -28,7 +28,7 @@ from app.schemas.organisation import (
     SiteOut,
     SiteUpdate,
 )
-from app.services.geofence import haversine_m, point_in_circle, point_in_polygon
+from app.services.geofence import haversine_m, point_in_polygon
 
 router = APIRouter(tags=["Organisation"])
 
