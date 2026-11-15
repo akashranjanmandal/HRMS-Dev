@@ -16,6 +16,10 @@ TEST_DATABASE_URL = os.environ.get(
 os.environ["DATABASE_URL"] = TEST_DATABASE_URL
 os.environ["UPLOAD_DIR"] = tempfile.mkdtemp(prefix="aaranyak-test-uploads-")
 os.environ.setdefault("SECRET_KEY", "test-secret-key")
+# The dev-only fixed OTP (app.core.config.Settings.DEV_FIXED_OTP) must not
+# leak into the test suite, which exercises real random-OTP behaviour
+# (e.g. that a wrong code is rejected).
+os.environ["DEV_FIXED_OTP"] = ""
 
 
 def _reset_test_database() -> None:

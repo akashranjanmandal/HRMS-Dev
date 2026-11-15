@@ -1,0 +1,194 @@
+@import "tailwindcss";
+
+/* ============================================================
+   Aaranyak HRMS — River teal / golden langur amber design system.
+   Tokens mirrored from design/tokens.css (the canonical source —
+   see design/index.html for the approved screen mockups). Keep
+   these two files in sync if the palette ever changes.
+   ============================================================ */
+@theme {
+  /* colour */
+  --color-bg: #f4f4ef;
+  --color-surface: #ffffff;
+  --color-surface-2: #ecede6;
+  --color-ink: #1a2124;
+  --color-ink-soft: #4a5558;
+  --color-ink-faint: #7b8689;
+  --color-line: #d9dbd2;
+  --color-primary: #0e6b6b; /* river teal */
+  --color-primary-ink: #ffffff;
+  --color-primary-tint: #dcecea;
+  --color-accent: #c47e12; /* golden langur amber */
+  --color-accent-tint: #f6e8cf;
+  --color-ok: #2f7a4b;
+  --color-ok-tint: #dff0e4;
+  --color-warn: #a76a00;
+  --color-warn-tint: #f7ebd2;
+  --color-bad: #b23b25;
+  --color-bad-tint: #f7e0db;
+
+  /* type */
+  --font-display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", sans-serif;
+  --font-body: "Public Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+
+  /* shape */
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 16px;
+
+  --shadow-aaranyak: 0 1px 2px rgb(20 30 32 / 0.06), 0 4px 16px rgb(20 30 32 / 0.06);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-bg: #0f1517;
+    --color-surface: #172024;
+    --color-surface-2: #1e2a2e;
+    --color-ink: #e5ebea;
+    --color-ink-soft: #b1bdbc;
+    --color-ink-faint: #7f8d8d;
+    --color-line: #2c3a3e;
+    --color-primary: #4bb3aa;
+    --color-primary-ink: #0b1a1a;
+    --color-primary-tint: #173634;
+    --color-accent: #e3a43b;
+    --color-accent-tint: #3a2e17;
+    --color-ok: #5fbf83;
+    --color-ok-tint: #18301f;
+    --color-warn: #e2a648;
+    --color-warn-tint: #352a14;
+    --color-bad: #ec7d66;
+    --color-bad-tint: #3a1d17;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --color-bg: #0f1517;
+  --color-surface: #172024;
+  --color-surface-2: #1e2a2e;
+  --color-ink: #e5ebea;
+  --color-ink-soft: #b1bdbc;
+  --color-ink-faint: #7f8d8d;
+  --color-line: #2c3a3e;
+  --color-primary: #4bb3aa;
+  --color-primary-ink: #0b1a1a;
+  --color-primary-tint: #173634;
+  --color-accent: #e3a43b;
+  --color-accent-tint: #3a2e17;
+  --color-ok: #5fbf83;
+  --color-ok-tint: #18301f;
+  --color-warn: #e2a648;
+  --color-warn-tint: #352a14;
+  --color-bad: #ec7d66;
+  --color-bad-tint: #3a1d17;
+  color-scheme: dark;
+}
+
+@layer base {
+  html,
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-ink);
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
+    color: inherit;
+  }
+  ::selection {
+    background: var(--color-primary);
+    color: #fff;
+  }
+}
+
+@layer components {
+  .card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 h-10 px-4 text-sm font-semibold transition-colors select-none whitespace-nowrap;
+    border-radius: var(--radius);
+    border: 1px solid transparent;
+  }
+  .btn-primary {
+    background: var(--color-primary);
+    color: var(--color-primary-ink);
+  }
+  .btn-primary:hover {
+    filter: brightness(0.95);
+  }
+  .btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .btn-ghost {
+    background: var(--color-surface);
+    color: var(--color-ink);
+    border-color: var(--color-line);
+  }
+  .btn-ghost:hover {
+    background: var(--color-surface-2);
+  }
+  .btn-lg {
+    @apply h-13 w-full text-base;
+    border-radius: var(--radius-lg);
+  }
+
+  .input {
+    @apply w-full h-11 px-3 text-base outline-none transition-colors;
+    background: var(--color-surface);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius);
+    color: var(--color-ink);
+  }
+  .input:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-tint);
+  }
+  .label {
+    @apply mb-1.5 block text-sm font-semibold;
+    color: var(--color-ink-soft);
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1.5 h-6 px-2.5 text-xs font-semibold rounded-full whitespace-nowrap;
+  }
+  .chip-ok {
+    background: var(--color-ok-tint);
+    color: var(--color-ok);
+  }
+  .chip-warn {
+    background: var(--color-warn-tint);
+    color: var(--color-warn);
+  }
+  .chip-bad {
+    background: var(--color-bad-tint);
+    color: var(--color-bad);
+  }
+  .chip-info {
+    background: var(--color-primary-tint);
+    color: var(--color-primary);
+  }
+  .chip-mute {
+    background: var(--color-surface-2);
+    color: var(--color-ink-soft);
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}

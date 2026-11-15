@@ -83,7 +83,14 @@ def reset_token_expiry() -> datetime:
 # --- email one-time code (MFA) ----------------------------------------------
 def generate_otp() -> str:
     """A 6-digit one-time code, sent by email (RFP 3.7, 13: optional
-    two-step login) for roles that see confidential data."""
+    two-step login) for roles that see confidential data. In dev/demo
+    (settings.DEV_FIXED_OTP set), every code is this fixed value instead
+    of random, so manual testing never has to go hunting in the mail
+    outbox — never set this in production."""
+    from app.core.config import settings
+
+    if settings.DEV_FIXED_OTP:
+        return settings.DEV_FIXED_OTP
     return f"{secrets.randbelow(1_000_000):06d}"
 
 

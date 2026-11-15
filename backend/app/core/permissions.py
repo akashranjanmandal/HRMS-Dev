@@ -118,10 +118,10 @@ _COORDINATOR_PERMS = _codes(
 # Profile screen 403s.
 _PROJECT_STAFF_PERMS = _codes(
     modules=("attendance", "leave", "asset", "document"), actions=("view", "create")
-) + _codes(modules=("employee",), actions=("view",))
+) + _codes(modules=("employee", "appraisal"), actions=("view",))
 
 _FIELD_STAFF_PERMS = _codes(modules=("attendance", "leave"), actions=("view", "create")) + _codes(
-    modules=("employee",), actions=("view",)
+    modules=("employee", "appraisal"), actions=("view",)
 )
 
 _FINANCE_PERMS = _codes(

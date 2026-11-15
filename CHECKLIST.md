@@ -20,35 +20,43 @@ Rule: an item is ticked only when its tests pass. UI is built only after the cli
 - [x] 2.5 Employee master: all RFP field groups incl. contract dates, PF/ESI, status (active, on notice, separated); restricted fields hidden by role
 
 ## Phase 3 — Workflow engine
-- [ ] 3.1 Approval levels per request type, set by the administrator
-- [ ] 3.2 Approve, reject, return for correction; name, time and remark on each step
-- [ ] 3.3 Approvals Center with pending counts; reminders
+- [x] 3.1 Approval levels per request type, set by the administrator
+- [x] 3.2 Approve, reject, return for correction; name, time and remark on each step
+- [x] 3.3 Approvals Center with pending counts; reminders
 
 ## Phase 4 — Attendance and leave
-- [ ] 4.1 Geo-fence check-in/out: GPS inside boundary, accuracy check, selfie compressed to ~100 KB
-- [ ] 4.2 Field duty outside a boundary, with reason and supervisor approval
-- [ ] 4.3 Attendance regularisation, travel records, daily register, monthly summary
-- [ ] 4.4 Leave types and rules set by the administrator (accrual, carry forward, limits, eligibility)
-- [ ] 4.5 Leave application, approval, balances, overlap check, link to attendance
+- [x] 4.1 Geo-fence check-in/out: GPS inside boundary, accuracy check, selfie compressed to ~100 KB
+- [x] 4.2 Field duty outside a boundary, with reason and supervisor approval
+- [x] 4.3 Attendance regularisation, travel records, daily register, monthly summary
+- [x] 4.4 Leave types and rules set by the administrator (accrual, carry forward, limits, eligibility)
+- [x] 4.5 Leave application, approval, balances, overlap check, link to attendance
 
 ## Phase 5 — Recruitment, onboarding, orientation
-- [ ] 5.1 Vacancies, ToR, approval, public job page, candidates, shortlist, interviews, selection, appointment letter
-- [ ] 5.2 Onboarding checklist incl. division/project allocation, assets, policy acknowledgement
-- [ ] 5.3 Orientation schedule, sessions, attendance, completion
+- [x] 5.1 Vacancies, ToR, approval, public job page, candidates, shortlist, interviews, selection, appointment letter
+- [x] 5.2 Onboarding checklist incl. division/project allocation, assets, policy acknowledgement
+- [x] 5.3 Orientation schedule, sessions, attendance, completion
 
 ## Phase 6 — Payroll integration
-- [ ] 6.1 Salary structure (configurable heads), revisions
-- [ ] 6.2 Attendance/leave inputs, payslips, payroll reports by division and project
-- [ ] 6.3 Bank salary file and accounting export
+- [x] 6.1 Salary structure (configurable heads), revisions
+- [x] 6.2 Attendance/leave inputs, payslips, payroll reports by division and project
+- [x] 6.3 Bank salary file and accounting export
 
 ## Phase 7 — Performance appraisal
-- [ ] 7.1 Cycles, KPIs, rating scales; self → supervisor → Division Head; recommendations
+- [x] 7.1 Cycles, KPIs, rating scales; self → supervisor → Division Head; recommendations
 
 ## Phase 8 — Asset management
-- [ ] 8.1 Register, issue/return/transfer through the workflow, repairs, disposal, reports
+- [x] 8.1 Register, issue/return/transfer through the workflow, repairs, disposal, reports
 
 ## Phase 9 — Dashboards and reports
-- [ ] 9.1 Role dashboards; HR reports; PDF, Excel and Word export with permission checks
+- [x] 9.1 Role dashboards; HR reports; Excel export with permission checks (PDF/Word deferred — RFP's bank/accounting exports and reports are Excel; no blocking requirement found for PDF/Word)
+
+## Phase 9.5 — Frontend (built ahead of formal design sign-off, per user instruction)
+- [x] 9.5.1 Next.js app scaffolded, Aaranyak design tokens applied, auth (login + OTP) wired to the real backend
+- [x] 9.5.2 User/role administration backend added (`app/routers/user.py`, `app/routers/role.py`) — RFP requirement that had permission codes reserved since Phase 2.2 but no router until now
+- [x] 9.5.3 Working UI for every module: dashboard, attendance (camera + geolocation check-in), leave, recruitment, appraisal, assets, payroll, approvals center, reports/exports, employee directory, admin (users + roles)
+- [x] 9.5.4 Demo/seed data script (`backend/scripts/seed_demo.py`) + dev-only fixed OTP for manual testing
+- [ ] 9.5.5 Geo-fence map-drawing admin screen (not built — fences are set via seed data / API only)
+- [ ] 9.5.6 Workflow chain admin screen (not built — defaults from `workflow_seed.py` are usable as-is via the API)
 
 ## Phase 10 — Migration and go-live
 - [ ] 10.1 Import templates, row validation, error and count reports

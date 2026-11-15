@@ -36,26 +36,22 @@ multiple checklist items into one untested push of code.
 
 ## Design status — READ BEFORE TOUCHING THE FRONTEND
 
-As of this writing, **`frontend/` does not exist yet.** Seven key screens
-were designed and published to the user for client review (see
-`design/index.html` + `design/tokens.css` for the source — these are the
+`frontend/` now exists and is a working Next.js app wired to the real
+backend (see Codebase map below) — built without waiting for formal client
+sign-off, per the user's explicit instruction. Seven key screens were
+designed and published to the user for client review first (see
+`design/index.html` + `design/tokens.css` for the source — these remain the
 canonical visual language: colour tokens, type, spacing, component shapes).
-The user later told me to build the frontend anyway without waiting for
-formal client sign-off, to keep pace with backend work. If you are picking
-this project up fresh:
+`frontend/src/app/globals.css` mirrors `design/tokens.css` 1:1 — keep them in
+sync if the palette ever changes, don't invent a new one.
 
-- Check with the user whether client sign-off has since happened or changed.
-- If `frontend/` already exists when you arrive, its components should trace
-  back to `design/tokens.css` — don't invent a new palette or type scale.
-- If `frontend/` does not exist yet, start from `design/index.html`'s
-  component patterns (buttons, chips, cards, the desktop shell, the mobile
-  browser-chrome + bottom-tab-bar pattern) rather than designing from
-  scratch. Note: the mobile screens are deliberately shown inside a **phone
-  browser frame** (URL bar, lock icon, browser toolbar) — this is RFP
-  compliance, not decoration. The RFP requires "web application only, no
-  Android or iOS app." A bottom tab bar inside the page is fine (it's just a
-  responsive layout choice); stripping the browser chrome around it is not —
-  don't remove it even if asked to make things "more app-like."
+- Check with the user whether formal client sign-off has since happened.
+- The mobile screens are deliberately shown inside a **phone browser frame**
+  (URL bar, lock icon, browser toolbar) in `design/index.html` — this is RFP
+  compliance, not decoration (RFP requires "web application only, no
+  Android or iOS app"). The real app's own `(app)/layout.tsx` runs as an
+  ordinary responsive website — a bottom tab bar on mobile is just a layout
+  choice — don't try to reintroduce native-app framing.
 
 ## Stack (fixed, from the proposal — do not substitute)
 
@@ -63,9 +59,9 @@ this project up fresh:
 |---|---|
 | Backend | Python 3.11, FastAPI, SQLAlchemy 2.x |
 | Database | PostgreSQL 16, via `psycopg` v3 |
-| Frontend | Next.js 15, React 19, Tailwind CSS 4 (not yet scaffolded) |
-| Maps / geo-fence | Leaflet + OpenStreetMap |
-| Reports | WeasyPrint (PDF), openpyxl (Excel), python-docx (Word) — not yet added, needed from Phase 9 |
+| Frontend | Next.js 15, React 19, Tailwind CSS 4 — scaffolded and built out |
+| Maps / geo-fence | Leaflet + OpenStreetMap (geo-fence math is backend-only pure functions; no map UI built yet for drawing fences — only for check-in, which reads the browser's own geolocation) |
+| Reports | openpyxl (Excel) only. WeasyPrint (PDF) and python-docx (Word) were never added — no blocking RFP requirement found for them; all reports/exports ship as .xlsx. Revisit only if the client specifically asks for PDF/Word. |
 | Auth | JWT (jose), bcrypt, email one-time code for confidential-data roles |
 
 ## Database
@@ -84,10 +80,21 @@ this project up fresh:
   Alembic/migrations tool yet — schema changes land as new model fields that
   `create_all` picks up (it won't alter or drop existing columns; a destructive
   schema change needs a manual migration or a dropped dev database).
-- **No demo/seed data script exists yet as of this writing.** If the user
-  asked for demo data "at all levels," check `backend/app/` for a
-  `seed.py` or similar before assuming it's missing — it may have been added
-  since this file was last updated.
+- **Demo/seed data**: `backend/app/services/demo_seed.py` + runner
+  `backend/scripts/seed_demo.py`. Idempotent (safe to rerun). Creates one
+  login per RFP role (`admin@aaranyak-demo.org` … `auditor@aaranyak-demo.org`,
+  all password `Demo@1234` — not `aaranyak.org` itself, so these can't be
+  mistaken for real staff emails, and deliberately not a reserved TLD like
+  `.test`/`.example` either, since `EmailStr` rejects those as non-routable),
+  two divisions, a project, two sites (one with a
+  geo-fence), four leave types, and sample attendance/leave/asset/salary-
+  structure/appraisal-cycle records so the UI isn't empty on first run.
+- **Dev-only fixed OTP**: `Settings.DEV_FIXED_OTP` (default `"000000"`)
+  makes every email OTP that value instead of random, so manual testing
+  never has to read `mailer.OUTBOX`. `tests/conftest.py` forces this back to
+  `""` (disabled) for the test suite, so real random-OTP behaviour (wrong
+  code rejected, etc.) is still what's actually tested. Never set this in a
+  real deployment.
 
 ## Running it
 
@@ -96,10 +103,25 @@ cd backend
 source venv/bin/activate          # venv already exists; if not: python3.11 -m venv venv
 pip install -r requirements-dev.txt
 uvicorn app.main:app --reload --port 8010   # 8010, not 8002 — AVFU uses 8002
+./venv/bin/python scripts/seed_demo.py      # one-time: demo logins + sample data
 ```
 
-Interactive API docs: `http://localhost:8010/docs`. No frontend to run yet
-(see Design status above).
+Interactive API docs: `http://localhost:8010/docs`.
+
+```bash
+cd frontend
+npm install
+npm run dev          # http://localhost:3000, points at :8010 by default
+```
+Override the backend URL via `NEXT_PUBLIC_API_BASE_URL` (see `.env.example`).
+
+**CORS gotcha**: if port 3000 is already taken (e.g. AVFU's frontend is
+running), Next.js silently falls back to 3001, 3002, etc. The backend's
+`CORS_ORIGINS` (default `http://localhost:3000` only, see
+`app/core/config.py`) won't allow that origin, and the symptom is a 400 on
+the browser's `OPTIONS` preflight before login even gets a chance to run.
+Fix: either free up port 3000, or add the actual port to
+`backend/.env`'s `CORS_ORIGINS` (comma-separated) and restart the backend.
 
 Tests:
 ```bash
@@ -108,9 +130,10 @@ cd backend
 ./venv/bin/python -m pytest -m unit     # fast, no DB
 ./venv/bin/python -m pytest -m integration
 ```
-135 tests passing as of the last commit on this file. If that number is
-wildly different when you check, something changed — find out what before
-proceeding.
+All green as of the last commit on this file (well over 200 tests — run it
+yourself rather than trusting a hardcoded count here, since this note won't
+be kept in sync). If the suite is failing when you pick this up, that's a
+real regression to fix, not something to work around.
 
 ## Codebase map
 
@@ -132,10 +155,19 @@ aaranyak-hrms/
 │   │   ├── schemas/      ← Pydantic request/response models, mirrors routers
 │   │   └── services/     ← business logic routers call into (geofence math,
 │   │                        employee_code generation, mailer, notify, xlsx)
+│   ├── scripts/
+│   │   └── seed_demo.py   ← one-time demo data for manual testing
 │   └── tests/
 │       ├── unit/          ← no DB, no HTTP — pure logic
 │       └── integration/   ← real Postgres test DB + FastAPI TestClient
-└── frontend/              ← does not exist yet (see Design status above)
+└── frontend/
+    ├── src/app/login/      ← two-step sign-in (password → OTP)
+    ├── src/app/(app)/      ← one folder per module, shell layout with
+    │                          permission-gated sidebar/bottom-tab-bar nav
+    ├── src/lib/api.ts      ← fetch wrapper (bearer token, 401 handling,
+    │                          downloadFile() for xlsx exports)
+    └── src/lib/auth.tsx    ← auth context: user, permissions, login/
+                               verifyOtp/logout, hasPermission()
 ```
 
 ## Key architectural decisions already made — don't relitigate these
@@ -192,27 +224,35 @@ aaranyak-hrms/
 Don't trust this section once it's gone stale — **`CHECKLIST.md` is
 authoritative, re-read it.** As a rough map at last update:
 
-- **Done (Phases 0–2):** project setup, 7 designed screens, organisation
-  structure (divisions/projects/sites/geo-fences), full RBAC (permissions +
-  roles + scope), sign-in with MFA, real logout, audit log, email sender,
-  on-screen notifications, the complete employee master.
+- **Done (Phases 0–9, backend + frontend):** project setup, 7 designed
+  screens, organisation structure, full RBAC, sign-in with MFA, real logout,
+  audit log, email sender, on-screen notifications, the complete employee
+  master, the generic workflow/approval engine, attendance & leave
+  (including geo-fenced check-in with selfie), recruitment/onboarding/
+  orientation, payroll, performance appraisal, asset management, dashboards
+  & reports. Every module has a working frontend page, not just an API.
+  User/role administration (`app/routers/user.py`, `app/routers/role.py`)
+  was added during the Phase 3–9 push — the RFP's "admin manages logins and
+  roles" requirement had permission codes (`user:*`, `role:*`) reserved from
+  Phase 2 but no router had ever been written for them until now.
 - **Explicitly deferred by the user:** Phase 10 (migration tooling,
   security/load testing, deployment, UAT) — skip this until told otherwise.
-- **Left (Phases 3–9):** workflow/approval engine, attendance & leave
-  (including the geo-fenced check-in with selfie), recruitment/onboarding/
-  orientation, payroll integration, performance appraisal, asset management,
-  dashboards & reports. Check `CHECKLIST.md` for exact sub-items and current
-  status — a session may have made partial progress since this file was
-  last touched.
+- **Not built, and not RFP-blocking:** a geo-fence map-drawing UI for admins
+  (the math exists server-side; nobody has a screen to draw a new fence yet
+  — sites currently need their geofence fields set directly, e.g. via the
+  seed script or a future admin screen). Workflow chain editing
+  (`PUT /api/workflows/{request_type}`) has no frontend screen either —
+  the defaults seeded by `workflow_seed.py` are sensible and usable as-is,
+  but an admin can't yet change "2 levels" to "3 levels" without the API
+  directly. PDF/Word report export (Excel only, see Stack table above).
 
 ## Demo data
 
-The user has asked for demo/seed data covering every level (organisation,
-roles, employees, and whatever each new phase adds) so the system can be
-clicked through and tested properly, not just verified via automated tests.
-If no seed script exists yet when you pick this up, that's real outstanding
-work, not an oversight to ignore — check `CHECKLIST.md` and the git log for
-whether it's been added since.
+`backend/scripts/seed_demo.py` (idempotent) creates one login per role, a
+small org structure, and sample records in every module. Password for every
+seeded login is `Demo@1234`; combined with `DEV_FIXED_OTP = "000000"`, any
+MFA-required role (`admin`, `hr_admin`, `finance`, `executive`) can be
+logged into with that fixed code — no need to read `mailer.OUTBOX`.
 
 ## Attribution
 

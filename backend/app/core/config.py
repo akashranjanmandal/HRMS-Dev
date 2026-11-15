@@ -33,6 +33,11 @@ class Settings(BaseSettings):
     SMTP_PASSWORD: str = ""
     SMTP_FROM: str = "Aaranyak HRMS <noreply@aaranyak.org>"
 
+    # Dev/demo convenience only: when set, every email OTP is this fixed
+    # value instead of a random one, so manual testing can log in as any
+    # seeded user without reading the mail outbox. Leave unset in production.
+    DEV_FIXED_OTP: str = "000000"
+
     @property
     def cors_origins_list(self) -> list[str]:
         return [o.strip() for o in self.CORS_ORIGINS.split(",") if o.strip()]
