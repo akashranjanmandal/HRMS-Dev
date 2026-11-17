@@ -21,6 +21,7 @@ from sqlalchemy.orm import Session
 from app.core import audit
 from app.core.database import get_db
 from app.core.deps import client_ip, get_current_user
+from app.core.rate_limit import check_and_record, reset as reset_rate_limit
 from app.core.security import (
     create_access_token,
     decode_token,
@@ -50,8 +51,15 @@ def _issue_session_token(db: Session, user: User) -> str:
     return token
 
 
+LOGIN_MAX_ATTEMPTS = 10
+LOGIN_WINDOW_SECONDS = 15 * 60
+OTP_MAX_ATTEMPTS = 5
+OTP_WINDOW_SECONDS = 10 * 60
+
+
 @router.post("/login", response_model=LoginOut)
 def login(payload: LoginIn, request: Request, db: Session = Depends(get_db)):
+    check_and_record(f"login:{payload.email.lower()}", max_attempts=LOGIN_MAX_ATTEMPTS, window_seconds=LOGIN_WINDOW_SECONDS)
     user = db.query(User).filter(User.email == payload.email).first()
 
     if user is None or not user.is_active or not verify_password(payload.password, user.hashed_password):
@@ -65,6 +73,8 @@ def login(payload: LoginIn, request: Request, db: Session = Depends(get_db)):
         )
         db.commit()
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password")
+
+    reset_rate_limit(f"login:{payload.email.lower()}")
 
     if user.role is not None and user.role.requires_mfa:
         code = generate_otp()
@@ -82,6 +92,7 @@ def login(payload: LoginIn, request: Request, db: Session = Depends(get_db)):
 
 @router.post("/verify-otp", response_model=LoginOut)
 def verify_otp_route(payload: VerifyOtpIn, request: Request, db: Session = Depends(get_db)):
+    check_and_record(f"otp:{payload.email.lower()}", max_attempts=OTP_MAX_ATTEMPTS, window_seconds=OTP_WINDOW_SECONDS)
     user = db.query(User).filter(User.email == payload.email).first()
     bad_code = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect or expired code")
 
@@ -95,6 +106,7 @@ def verify_otp_route(payload: VerifyOtpIn, request: Request, db: Session = Depen
     # One-time: clear immediately so the same code cannot be replayed.
     user.otp_hash = ""
     user.otp_expires_at = None
+    reset_rate_limit(f"otp:{payload.email.lower()}")
 
     token = _issue_session_token(db, user)
     audit.log(db, user, "auth.login", summary=f"{user.email} signed in (OTP verified)", ip=client_ip(request))

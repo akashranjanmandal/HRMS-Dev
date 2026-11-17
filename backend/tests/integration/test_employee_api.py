@@ -133,6 +133,35 @@ def test_division_head_cannot_see_confidential_fields(client, db):
     assert forbidden.status_code == 403
 
 
+def test_division_scoped_role_with_confidential_permission_cannot_see_another_divisions_data(client, db):
+    """An administrator can grant employee_confidential:view to any
+    role via app/routers/role.py — division_head is division-scoped
+    (app.core.scope.scope_for_role), so if it ever holds that permission
+    it must still not reach another division's bank/statutory data."""
+    from app.models import Permission, Role
+
+    hr_headers = _login(client, _make_user(db, "hr_admin"))
+    div_a = _make_division(db, "Rhino Research", "RHN")
+    div_b = _make_division(db, "Elephant Corridor", "ELC")
+    emp = _create_employee(client, hr_headers, div_a.id).json()
+    client.put(
+        f"/api/employees/{emp['id']}/confidential",
+        json={"bank_account_number": "1234567890", "bank_ifsc": "SBIN0001234", "pan_number": "ABCDE1234F", "aadhaar_number": "123412341234"},
+        headers=hr_headers,
+    )
+
+    division_head_role = db.query(Role).filter_by(code="division_head").one()
+    confidential_view = db.query(Permission).filter_by(code="employee_confidential:view").one()
+    division_head_role.permissions.append(confidential_view)
+    db.commit()
+
+    other_division_head = _make_user(db, "division_head", division_id=div_b.id, email="other-division-head@aaranyak.org")
+    other_headers = _login(client, other_division_head)
+
+    r = client.get(f"/api/employees/{emp['id']}/confidential", headers=other_headers)
+    assert r.status_code == 403
+
+
 def test_hr_sees_confidential_fields_when_requested(client, db):
     headers = _login(client, _make_user(db, "hr_admin"))
     div = _make_division(db)

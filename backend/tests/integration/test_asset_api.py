@@ -252,3 +252,56 @@ def test_employee_can_view_own_assets(client, db):
 
 def test_unauthenticated_is_401(client):
     assert client.get("/api/assets").status_code == 401
+
+
+def test_division_head_does_not_see_another_divisions_asset(client, db):
+    div1 = _make_division(db)
+    div2 = Division(name="Elephant Corridor", code="ELC")
+    db.add(div2)
+    db.commit()
+    db.refresh(div2)
+
+    hr = _make_user(db, "hr_admin")
+    hr_headers = _login(client, hr)
+    asset = _create_asset(client, hr_headers, division_id=div2.id)
+
+    division_head = _make_user(db, "division_head", division_id=div1.id)
+    dh_headers = _login(client, division_head)
+
+    r = client.get("/api/assets", headers=dh_headers)
+    assert r.status_code == 200
+    assert all(a["id"] != asset["id"] for a in r.json())
+
+    r = client.get(f"/api/assets/{asset['id']}", headers=dh_headers)
+    assert r.status_code == 403
+
+
+def test_division_head_sees_org_wide_assets_with_no_division(client, db):
+    div1 = _make_division(db)
+    hr = _make_user(db, "hr_admin")
+    hr_headers = _login(client, hr)
+    asset = _create_asset(client, hr_headers)  # no division_id — org-wide
+
+    division_head = _make_user(db, "division_head", division_id=div1.id)
+    dh_headers = _login(client, division_head)
+    r = client.get("/api/assets", headers=dh_headers)
+    assert any(a["id"] == asset["id"] for a in r.json())
+
+
+def test_division_head_cannot_issue_another_divisions_asset(client, db):
+    div1 = _make_division(db)
+    div2 = Division(name="Elephant Corridor", code="ELC")
+    db.add(div2)
+    db.commit()
+    db.refresh(div2)
+
+    staff = _make_user(db, "field_staff")
+    emp = _make_employee(db, div2.id, user=staff)
+    hr = _make_user(db, "hr_admin")
+    hr_headers = _login(client, hr)
+    asset = _create_asset(client, hr_headers, division_id=div2.id)
+
+    division_head = _make_user(db, "division_head", division_id=div1.id)
+    dh_headers = _login(client, division_head)
+    r = client.post(f"/api/assets/{asset['id']}/issue", json={"employee_id": emp.id}, headers=dh_headers)
+    assert r.status_code == 403

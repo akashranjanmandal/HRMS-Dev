@@ -187,3 +187,40 @@ def test_requesting_a_fresh_otp_invalidates_the_previous_one(client, db, monkeyp
 
     fresh = client.post("/api/auth/verify-otp", json={"email": user.email, "code": "222222"})
     assert fresh.status_code == 200
+
+
+# -------------------------------------------------------------- rate limiting
+def test_login_is_rate_limited_after_repeated_failures(client, db):
+    from app.routers.auth import LOGIN_MAX_ATTEMPTS
+
+    user = _make_user(db, "field_staff")
+    for _ in range(LOGIN_MAX_ATTEMPTS):
+        r = client.post("/api/auth/login", json={"email": user.email, "password": "wrong"})
+        assert r.status_code == 401
+    r = client.post("/api/auth/login", json={"email": user.email, "password": "wrong"})
+    assert r.status_code == 429
+
+
+def test_login_rate_limit_resets_on_success(client, db):
+    from app.routers.auth import LOGIN_MAX_ATTEMPTS
+
+    user = _make_user(db, "field_staff")
+    for _ in range(LOGIN_MAX_ATTEMPTS - 1):
+        client.post("/api/auth/login", json={"email": user.email, "password": "wrong"})
+    r = client.post("/api/auth/login", json={"email": user.email, "password": PASSWORD})
+    assert r.status_code == 200
+
+    r = client.post("/api/auth/login", json={"email": user.email, "password": "wrong"})
+    assert r.status_code == 401  # not 429 — the counter was reset by the successful login
+
+
+def test_otp_verify_is_rate_limited_after_repeated_wrong_codes(client, db):
+    from app.routers.auth import OTP_MAX_ATTEMPTS
+
+    user = _make_user(db, "admin")
+    client.post("/api/auth/login", json={"email": user.email, "password": PASSWORD})
+    for _ in range(OTP_MAX_ATTEMPTS):
+        r = client.post("/api/auth/verify-otp", json={"email": user.email, "code": "000000"})
+        assert r.status_code == 401
+    r = client.post("/api/auth/verify-otp", json={"email": user.email, "code": "000000"})
+    assert r.status_code == 429

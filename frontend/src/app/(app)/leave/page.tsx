@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Search } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 
@@ -51,6 +52,8 @@ export default function LeavePage() {
   const [submitting, setSubmitting] = useState(false);
 
   const [form, setForm] = useState({ leave_type_id: "", start_date: "", end_date: "", reason: "" });
+  const [teamQuery, setTeamQuery] = useState("");
+  const [teamStatusFilter, setTeamStatusFilter] = useState<string | null>(null);
 
   const canApprove = hasPermission("leave:approve");
 
@@ -64,6 +67,15 @@ export default function LeavePage() {
   };
 
   useEffect(load, [canApprove]);
+
+  const filteredTeam = useMemo(() => {
+    const q = teamQuery.toLowerCase();
+    return team.filter((r) => {
+      const matchesQuery = r.employee_name.toLowerCase().includes(q) || r.leave_type_name.toLowerCase().includes(q);
+      const matchesStatus = !teamStatusFilter || r.status === teamStatusFilter;
+      return matchesQuery && matchesStatus;
+    });
+  }, [team, teamQuery, teamStatusFilter]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -97,10 +109,28 @@ export default function LeavePage() {
   }
 
   return (
-    <div className="grid gap-5 max-w-5xl">
+    <div className="grid gap-5 max-w-6xl">
       <h1 className="text-2xl" style={{ fontFamily: "var(--font-display)" }}>
         Leave
       </h1>
+
+      {balances.length > 0 && (
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {balances.map((b) => (
+            <div key={b.leave_type_id} className="card flex items-center justify-between">
+              <span className="text-sm font-medium" style={{ color: "var(--color-ink-soft)" }}>
+                {b.leave_type_name}
+              </span>
+              <span
+                className="text-lg font-bold px-3 py-1 rounded-full"
+                style={{ background: "var(--color-primary-tint)", color: "var(--color-primary)" }}
+              >
+                {b.available_days}d
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="grid gap-5 lg:grid-cols-[320px_1fr]">
         <form onSubmit={submit} className="card grid gap-3 content-start">
@@ -158,20 +188,6 @@ export default function LeavePage() {
           <button className="btn btn-primary" disabled={submitting}>
             {submitting ? "Submitting…" : "Submit application"}
           </button>
-
-          {balances.length > 0 && (
-            <div className="grid gap-1.5 pt-2" style={{ borderTop: "1px solid var(--color-line)" }}>
-              <h4 className="text-xs font-semibold uppercase tracking-wide pt-2" style={{ color: "var(--color-ink-faint)" }}>
-                Balances
-              </h4>
-              {balances.map((b) => (
-                <div key={b.leave_type_id} className="flex justify-between text-sm">
-                  <span>{b.leave_type_name}</span>
-                  <span className="font-semibold">{b.available_days} days</span>
-                </div>
-              ))}
-            </div>
-          )}
         </form>
 
         <div className="grid gap-4">
@@ -182,8 +198,24 @@ export default function LeavePage() {
 
           {canApprove && (
             <div className="card">
-              <h3 className="text-base font-semibold mb-3">Team applications</h3>
-              <ApplicationTable rows={team} showEmployee />
+              <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
+                <h3 className="text-base font-semibold">Team applications</h3>
+                <div className="relative">
+                  <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2" style={{ color: "var(--color-ink-faint)" }} />
+                  <input className="input pl-8 h-8 text-xs w-48" placeholder="Search employee, type…" value={teamQuery} onChange={(e) => setTeamQuery(e.target.value)} />
+                </div>
+              </div>
+              <div className="flex gap-1.5 flex-wrap mb-3">
+                <button className={`chip ${teamStatusFilter === null ? "chip-info" : "chip-mute"}`} onClick={() => setTeamStatusFilter(null)}>
+                  All
+                </button>
+                {Object.keys(STATUS_CHIP).map((s) => (
+                  <button key={s} className={`chip ${teamStatusFilter === s ? "chip-info" : "chip-mute"}`} onClick={() => setTeamStatusFilter(s)}>
+                    {s}
+                  </button>
+                ))}
+              </div>
+              <ApplicationTable rows={filteredTeam} showEmployee />
             </div>
           )}
         </div>

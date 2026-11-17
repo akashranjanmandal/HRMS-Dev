@@ -137,6 +137,7 @@ def update_employee_status(
 @router.get("/{employee_id}/confidential", response_model=EmployeeConfidentialOut)
 def get_confidential(employee_id: int, db: Session = Depends(get_db), user: User = Depends(VIEW_CONFIDENTIAL)):
     employee = _get_or_404(db, employee_id)
+    _assert_in_scope(user, employee)
     row = employee.confidential
     if row is None:
         # Nothing recorded yet — every field defaults to blank rather than
@@ -160,6 +161,7 @@ def set_confidential(
     user: User = Depends(EDIT_CONFIDENTIAL),
 ):
     employee = _get_or_404(db, employee_id)
+    _assert_in_scope(user, employee)
     row = employee.confidential
     if row is None:
         row = EmployeeConfidential(employee_id=employee.id)

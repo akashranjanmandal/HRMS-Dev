@@ -56,10 +56,18 @@ def _out(record: Attendance, db: Session) -> AttendanceOut:
 
 
 def _save_selfie(employee_id: int, selfie_base64: str) -> str:
+    # Reject an oversized payload before doing any decode/decompress work —
+    # base64 inflates size by ~4/3, so this is a cheap, early size check
+    # rather than one that only fires after the expensive part is already done.
+    encoded = selfie_base64.split(",")[-1]
+    if len(encoded) > settings.max_upload_bytes * 4 // 3:
+        raise HTTPException(status_code=413, detail="Selfie image is too large")
     try:
-        raw = base64.b64decode(selfie_base64.split(",")[-1], validate=False)
+        raw = base64.b64decode(encoded, validate=False)
     except Exception:
         raise HTTPException(status_code=400, detail="selfie_base64 is not valid base64 image data")
+    if len(raw) > settings.max_upload_bytes:
+        raise HTTPException(status_code=413, detail="Selfie image is too large")
     compressed = compress_selfie(raw)
     folder = settings.upload_path / "selfies" / str(employee_id)
     folder.mkdir(parents=True, exist_ok=True)

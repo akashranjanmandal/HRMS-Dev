@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { Bell, LogOut } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { NAV_ITEMS } from "@/components/nav";
+import { GlobalSearch } from "@/components/GlobalSearch";
 
 const APPROVE_CODES = [
   "recruitment:approve",
@@ -132,11 +133,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             Aaranyak HRMS
           </span>
           <span
-            className="hidden md:inline-flex items-center gap-2 h-[34px] px-3 text-sm rounded-full"
+            className="hidden md:inline-flex items-center gap-2 h-[34px] px-3 text-sm rounded-full flex-none"
             style={{ border: "1px solid var(--color-line)" }}
           >
             {user.role_name}
           </span>
+          <GlobalSearch />
           <div className="flex-1" />
           <button
             className="w-[34px] h-[34px] rounded-full grid place-items-center relative"

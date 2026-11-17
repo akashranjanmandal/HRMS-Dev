@@ -35,8 +35,11 @@ class Settings(BaseSettings):
 
     # Dev/demo convenience only: when set, every email OTP is this fixed
     # value instead of a random one, so manual testing can log in as any
-    # seeded user without reading the mail outbox. Leave unset in production.
-    DEV_FIXED_OTP: str = "000000"
+    # seeded user without reading the mail outbox. Off by default — must
+    # be deliberately set (e.g. in a local-only .env), and is refused
+    # outright alongside a real SMTP_HOST (see Settings.__init__ below),
+    # since that combination means this is not a throwaway dev box.
+    DEV_FIXED_OTP: str = ""
 
     @property
     def cors_origins_list(self) -> list[str]:
@@ -51,6 +54,15 @@ class Settings(BaseSettings):
     @property
     def max_upload_bytes(self) -> int:
         return self.MAX_UPLOAD_MB * 1024 * 1024
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        if self.DEV_FIXED_OTP and self.SMTP_HOST:
+            raise ValueError(
+                "DEV_FIXED_OTP is set alongside a real SMTP_HOST — refusing to start. "
+                "A fixed, publicly-known OTP must never be enabled anywhere real email "
+                "delivery is configured. Unset DEV_FIXED_OTP (or SMTP_HOST, for a throwaway dev box)."
+            )
 
 
 settings = Settings()

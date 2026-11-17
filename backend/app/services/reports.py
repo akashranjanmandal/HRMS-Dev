@@ -23,6 +23,44 @@ from app.models import (
 )
 
 
+def attendance_by_division_for_date(db: Session, for_date: date) -> list[dict]:
+    """Per-division attendance composition for one day (dashboard's
+    stacked bar): how many active employees are present, out on field
+    duty (still awaiting approval), or on leave, against that division's
+    total active headcount. Organisation-scoped only — same visibility
+    rule as ``employee_strength_by_division``."""
+    rows = (
+        db.query(Division.name, Attendance.status, func.count(Attendance.id))
+        .join(Employee, Employee.division_id == Division.id)
+        .join(Attendance, (Attendance.employee_id == Employee.id) & (Attendance.work_date == for_date))
+        .filter(Employee.status == EmployeeStatus.active)
+        .group_by(Division.name, Attendance.status)
+        .order_by(Division.name)
+        .all()
+    )
+    totals = dict(
+        db.query(Division.name, func.count(Employee.id))
+        .outerjoin(Employee, (Employee.division_id == Division.id) & (Employee.status == EmployeeStatus.active))
+        .group_by(Division.name)
+        .all()
+    )
+    by_division: dict[str, dict] = {
+        name: {"division": name, "present": 0, "field_duty": 0, "on_leave": 0, "total_active": total}
+        for name, total in totals.items()
+    }
+    for name, status, count in rows:
+        entry = by_division.setdefault(
+            name, {"division": name, "present": 0, "field_duty": 0, "on_leave": 0, "total_active": totals.get(name, 0)}
+        )
+        if status == AttendanceStatus.present:
+            entry["present"] += count
+        elif status == AttendanceStatus.pending_approval:
+            entry["field_duty"] += count
+        elif status == AttendanceStatus.on_leave:
+            entry["on_leave"] += count
+    return [by_division[name] for name in sorted(by_division)]
+
+
 def employee_strength_by_division(db: Session) -> list[dict]:
     rows = (
         db.query(Division.name, func.count(Employee.id))

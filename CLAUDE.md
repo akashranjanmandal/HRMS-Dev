@@ -206,6 +206,19 @@ aaranyak-hrms/
 - **Logout is real, not just "client discards the token."** Every JWT
   carries a `jti`; `app.models.Session` tracks which are revoked. See
   `app/core/deps.get_current_user` and `app/routers/auth.logout`.
+- **Login/OTP attempts are rate-limited** (`app/core/rate_limit.py`): 10
+  login attempts per 15 min and 5 OTP attempts per 10 min, both keyed by
+  email, in-process (matches `mailer.OUTBOX`'s style — fine for one
+  worker; a multi-worker deployment would need a shared store like Redis
+  instead, since each worker keeps its own counters).
+- **The JWT is stored in the frontend's `localStorage`** (`src/lib/api.ts`),
+  not an httpOnly cookie — a known, accepted tradeoff for this SPA/bearer-
+  token setup, but it means any XSS on the app can exfiltrate the token
+  directly. If a stored/reflected XSS vector is ever found, treat it as
+  critical given what this app holds (PII, bank/statutory details,
+  attendance geolocation/selfies) — moving to an httpOnly cookie + CSRF
+  token would remove this class of risk entirely, but is a bigger change
+  not done as part of the Phase 3–9 security pass.
 - **Email sender has a dev/test mode built in.** `SMTP_HOST` empty (the
   default) means every "sent" email lands in
   `app.services.mailer.OUTBOX` (an in-memory list) instead of touching the
@@ -235,6 +248,16 @@ authoritative, re-read it.** As a rough map at last update:
   was added during the Phase 3–9 push — the RFP's "admin manages logins and
   roles" requirement had permission codes (`user:*`, `role:*`) reserved from
   Phase 2 but no router had ever been written for them until now.
+- **Done (security audit + UI/UX pass, Phase 11):** rate limiting on
+  login/OTP, scope fixes on confidential-employee and asset endpoints,
+  `DEV_FIXED_OTP` made safe-by-default, selfie upload size enforcement,
+  every module page redesigned for density (summary stats, filters, real
+  empty states), the dashboard's 5th KPI tile and broken division bar
+  fixed (now a real composition chart), a global cross-module search
+  (`GET /api/search`, gated identically to each owning module — grants no
+  new visibility), kanban boards for Approvals and Recruitment, and
+  in-app report preview (`/preview` JSON endpoints beside every `/export`
+  one). See CHECKLIST.md Phase 11 for the itemised list.
 - **Explicitly deferred by the user:** Phase 10 (migration tooling,
   security/load testing, deployment, UAT) — skip this until told otherwise.
 - **Not built, and not RFP-blocking:** a geo-fence map-drawing UI for admins

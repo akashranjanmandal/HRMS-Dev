@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Download, Plus, PlayCircle } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Download, Plus, PlayCircle, Search } from "lucide-react";
 import { api, ApiError, downloadFile } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 
@@ -37,6 +37,7 @@ export default function PayrollPage() {
   const [showNew, setShowNew] = useState(false);
   const today = new Date();
   const [newRun, setNewRun] = useState({ month: today.getMonth() + 1, year: today.getFullYear() });
+  const [payslipQuery, setPayslipQuery] = useState("");
 
   const canCreate = hasPermission("payroll:create");
   const canApprove = hasPermission("payroll:approve");
@@ -46,6 +47,15 @@ export default function PayrollPage() {
     api.get<PayrollRun[]>("/api/payroll").then(setRuns).catch(() => {});
   };
   useEffect(load, []);
+
+  const totalNetPaid = useMemo(() => runs.reduce((sum, r) => sum + r.total_net, 0), [runs]);
+  const finalisedCount = useMemo(() => runs.filter((r) => r.status === "finalised").length, [runs]);
+
+  const filteredPayslips = useMemo(() => {
+    if (!selected) return [];
+    const q = payslipQuery.toLowerCase();
+    return selected.payslips.filter((p) => p.employee_name.toLowerCase().includes(q) || (p.division_name ?? "").toLowerCase().includes(q));
+  }, [selected, payslipQuery]);
 
   async function openRun(id: number) {
     try {
@@ -81,11 +91,16 @@ export default function PayrollPage() {
   }
 
   return (
-    <div className="grid gap-5 max-w-5xl">
+    <div className="grid gap-5 max-w-6xl">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <h1 className="text-2xl" style={{ fontFamily: "var(--font-display)" }}>
-          Payroll
-        </h1>
+        <div>
+          <h1 className="text-2xl" style={{ fontFamily: "var(--font-display)" }}>
+            Payroll
+          </h1>
+          <p className="text-sm" style={{ color: "var(--color-ink-soft)" }}>
+            {runs.length} {runs.length === 1 ? "run" : "runs"} on record
+          </p>
+        </div>
         {canCreate && (
           <button className="btn btn-primary" onClick={() => setShowNew((s) => !s)}>
             <Plus size={16} /> New run
@@ -94,6 +109,35 @@ export default function PayrollPage() {
       </div>
 
       {error && <div className="card chip-bad">{error}</div>}
+
+      {runs.length > 0 && (
+        <div className="grid gap-3 sm:grid-cols-3">
+          <div className="card flex items-center justify-between">
+            <span className="text-sm font-medium" style={{ color: "var(--color-ink-soft)" }}>
+              Total net paid
+            </span>
+            <span className="text-lg font-bold" style={{ color: "var(--color-primary)" }}>
+              ₹{totalNetPaid.toLocaleString()}
+            </span>
+          </div>
+          <div className="card flex items-center justify-between">
+            <span className="text-sm font-medium" style={{ color: "var(--color-ink-soft)" }}>
+              Finalised runs
+            </span>
+            <span className="text-lg font-bold px-3 py-1 rounded-full" style={{ background: "var(--color-ok-tint)", color: "var(--color-ok)" }}>
+              {finalisedCount}
+            </span>
+          </div>
+          <div className="card flex items-center justify-between">
+            <span className="text-sm font-medium" style={{ color: "var(--color-ink-soft)" }}>
+              Draft runs
+            </span>
+            <span className="text-lg font-bold px-3 py-1 rounded-full" style={{ background: "var(--color-surface-2)", color: "var(--color-ink-soft)" }}>
+              {runs.length - finalisedCount}
+            </span>
+          </div>
+        </div>
+      )}
 
       {showNew && (
         <form onSubmit={createRun} className="card grid gap-3 sm:grid-cols-[auto_auto_auto]">
@@ -139,14 +183,21 @@ export default function PayrollPage() {
               <span className={`chip ${r.status === "finalised" ? "chip-ok" : "chip-mute"}`}>{r.status}</span>
             </button>
           ))}
-          {runs.length === 0 && <p className="text-sm" style={{ color: "var(--color-ink-faint)" }}>No runs yet.</p>}
+          {runs.length === 0 && (
+            <p className="text-sm py-6 text-center" style={{ color: "var(--color-ink-faint)" }}>
+              No runs yet — generate one to get started.
+            </p>
+          )}
         </div>
 
         <div className="card">
           {!selected ? (
-            <p className="text-sm" style={{ color: "var(--color-ink-faint)" }}>
-              Select a run to see its payslips.
-            </p>
+            <div className="py-10 text-center grid gap-1">
+              <p className="text-sm font-medium">Select a run to see its payslips.</p>
+              <p className="text-xs" style={{ color: "var(--color-ink-faint)" }}>
+                Pick one from the list on the left.
+              </p>
+            </div>
           ) : (
             <div className="grid gap-4">
               <div className="flex items-center justify-between flex-wrap gap-2">
@@ -158,7 +209,16 @@ export default function PayrollPage() {
                     {selected.payslip_count} payslips · ₹{selected.total_net.toLocaleString()} net
                   </p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 items-center">
+                  <div className="relative">
+                    <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2" style={{ color: "var(--color-ink-faint)" }} />
+                    <input
+                      className="input pl-8 h-8 text-xs w-40"
+                      placeholder="Search payslips…"
+                      value={payslipQuery}
+                      onChange={(e) => setPayslipQuery(e.target.value)}
+                    />
+                  </div>
                   {canApprove && selected.status === "draft" && (
                     <button className="btn btn-ghost" onClick={() => finalise(selected.id)}>
                       <PlayCircle size={16} /> Finalise
@@ -189,7 +249,7 @@ export default function PayrollPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {selected.payslips.map((p) => (
+                    {filteredPayslips.map((p) => (
                       <tr key={p.id} style={{ borderTop: "1px solid var(--color-line)" }}>
                         <td className="py-2">{p.employee_name}</td>
                         <td className="py-2">{p.division_name ?? "—"}</td>

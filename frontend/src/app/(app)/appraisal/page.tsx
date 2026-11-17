@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 
@@ -48,6 +48,12 @@ export default function AppraisalPage() {
   };
   useEffect(load, [canApprove]);
 
+  const stageCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const r of queue) counts[r.stage] = (counts[r.stage] ?? 0) + 1;
+    return counts;
+  }, [queue]);
+
   async function submitSelfAssessment(review: AppraisalReview) {
     setError("");
     try {
@@ -93,69 +99,104 @@ export default function AppraisalPage() {
   }
 
   return (
-    <div className="grid gap-5 max-w-4xl">
+    <div className="grid gap-5 max-w-5xl">
       <h1 className="text-2xl" style={{ fontFamily: "var(--font-display)" }}>
         Performance Appraisal
       </h1>
 
       {error && <div className="card chip-bad">{error}</div>}
 
+      {canApprove && queue.length > 0 && (
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <AppraisalStatTile label="Self-assessment" value={stageCounts.self_assessment ?? 0} tone="warn" />
+          <AppraisalStatTile label="Supervisor review" value={stageCounts.supervisor_review ?? 0} tone="info" />
+          <AppraisalStatTile label="Division Head review" value={stageCounts.division_head_review ?? 0} tone="info" />
+          <AppraisalStatTile label="Completed" value={stageCounts.completed ?? 0} tone="ok" />
+        </div>
+      )}
+
       <div className="card">
         <h3 className="text-base font-semibold mb-3">My appraisals</h3>
-        {mine.length === 0 && <p className="text-sm" style={{ color: "var(--color-ink-faint)" }}>No appraisal cycle yet.</p>}
-        <div className="grid gap-2">
-          {mine.map((r) => (
-            <div key={r.id} className="flex items-center justify-between gap-3 py-1.5">
-              <div>
-                <p className="font-medium text-sm">{r.cycle_name}</p>
-                <span className={`chip ${STAGE_CHIP[r.stage]}`}>{r.stage.replace(/_/g, " ")}</span>
-              </div>
-              {r.stage === "self_assessment" && (
-                <button
-                  className="btn btn-ghost h-8 px-3 text-xs"
-                  onClick={() => {
-                    setActive(r);
-                    setSelfText("");
-                    setSelfRating(4);
-                  }}
-                >
-                  Complete self-assessment
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {canApprove && (
-        <div className="card">
-          <h3 className="text-base font-semibold mb-3">Awaiting your review</h3>
-          {queue.filter((r) => r.stage !== "self_assessment" && r.stage !== "completed").length === 0 && (
-            <p className="text-sm" style={{ color: "var(--color-ink-faint)" }}>Nothing pending.</p>
-          )}
+        {mine.length === 0 ? (
+          <div className="py-8 text-center grid gap-1">
+            <p className="text-sm font-medium">No appraisal cycle yet.</p>
+            <p className="text-xs" style={{ color: "var(--color-ink-faint)" }}>
+              You&apos;ll see your review here once HR opens a cycle.
+            </p>
+          </div>
+        ) : (
           <div className="grid gap-2">
-            {queue
-              .filter((r) => r.stage === "supervisor_review" || r.stage === "division_head_review")
-              .map((r) => (
-                <div key={r.id} className="flex items-center justify-between gap-3 py-1.5">
-                  <div>
-                    <p className="font-medium text-sm">{r.employee_name}</p>
-                    <span className={`chip ${STAGE_CHIP[r.stage]}`}>{r.stage.replace(/_/g, " ")}</span>
-                  </div>
+            {mine.map((r) => (
+              <div key={r.id} className="flex items-center justify-between gap-3 py-1.5" style={{ borderTop: "1px solid var(--color-line)" }}>
+                <div>
+                  <p className="font-medium text-sm">{r.cycle_name}</p>
+                  <span className={`chip ${STAGE_CHIP[r.stage]}`}>{r.stage.replace(/_/g, " ")}</span>
+                </div>
+                {r.stage === "self_assessment" && (
                   <button
                     className="btn btn-ghost h-8 px-3 text-xs"
                     onClick={() => {
                       setActive(r);
-                      setComments("");
-                      setRating(4);
-                      setSalaryRevision(false);
+                      setSelfText("");
+                      setSelfRating(4);
                     }}
                   >
-                    Review
+                    Complete self-assessment
                   </button>
-                </div>
-              ))}
+                )}
+              </div>
+            ))}
           </div>
+        )}
+      </div>
+
+      {canApprove && (
+        <div className="card">
+          <h3 className="text-base font-semibold mb-3">Team overview</h3>
+          {queue.length === 0 ? (
+            <p className="text-sm py-6 text-center" style={{ color: "var(--color-ink-faint)" }}>
+              No reviews in your scope yet.
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr style={{ color: "var(--color-ink-faint)" }} className="text-left">
+                    <th className="pb-2 font-medium">Employee</th>
+                    <th className="pb-2 font-medium">Cycle</th>
+                    <th className="pb-2 font-medium">Stage</th>
+                    <th className="pb-2 font-medium"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {queue.map((r) => (
+                    <tr key={r.id} style={{ borderTop: "1px solid var(--color-line)" }}>
+                      <td className="py-2 font-medium">{r.employee_name}</td>
+                      <td className="py-2">{r.cycle_name}</td>
+                      <td className="py-2">
+                        <span className={`chip ${STAGE_CHIP[r.stage]}`}>{r.stage.replace(/_/g, " ")}</span>
+                      </td>
+                      <td className="py-2 text-right">
+                        {(r.stage === "supervisor_review" || r.stage === "division_head_review") && (
+                          <button
+                            className="btn btn-ghost h-7 px-2 text-xs"
+                            onClick={() => {
+                              setActive(r);
+                              setComments("");
+                              setRating(4);
+                              setSalaryRevision(false);
+                            }}
+                          >
+                            Review
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
 
@@ -225,6 +266,24 @@ function RatingPicker({ value, onChange }: { value: number; onChange: (v: number
           {n}
         </button>
       ))}
+    </div>
+  );
+}
+
+function AppraisalStatTile({ label, value, tone }: { label: string; value: number; tone: "ok" | "warn" | "info" }) {
+  const colors = {
+    ok: { bg: "var(--color-ok-tint)", fg: "var(--color-ok)" },
+    warn: { bg: "var(--color-warn-tint)", fg: "var(--color-warn)" },
+    info: { bg: "var(--color-primary-tint)", fg: "var(--color-primary)" },
+  }[tone];
+  return (
+    <div className="card flex items-center justify-between">
+      <span className="text-sm font-medium" style={{ color: "var(--color-ink-soft)" }}>
+        {label}
+      </span>
+      <span className="text-lg font-bold px-3 py-1 rounded-full" style={{ background: colors.bg, color: colors.fg }}>
+        {value}
+      </span>
     </div>
   );
 }

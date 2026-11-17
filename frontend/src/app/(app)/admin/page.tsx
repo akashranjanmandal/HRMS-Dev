@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Plus, RotateCcw, ShieldOff, ShieldCheck } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Plus, RotateCcw, ShieldOff, ShieldCheck, Search } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
 
 interface AppUser {
@@ -39,6 +39,7 @@ export default function AdminPage() {
   const [notice, setNotice] = useState("");
   const [showNew, setShowNew] = useState(false);
   const [newUser, setNewUser] = useState({ email: "", role_code: "", division_id: "" });
+  const [userQuery, setUserQuery] = useState("");
 
   const load = () => {
     api.get<AppUser[]>("/api/users").then(setUsers).catch(() => {});
@@ -46,6 +47,15 @@ export default function AdminPage() {
     api.get<Division[]>("/api/divisions").then(setDivisions).catch(() => {});
   };
   useEffect(load, []);
+
+  const activeCount = useMemo(() => users.filter((u) => u.is_active).length, [users]);
+  const mfaRoleCodes = useMemo(() => new Set(roles.filter((r) => r.requires_mfa).map((r) => r.code)), [roles]);
+  const mfaUserCount = useMemo(() => users.filter((u) => mfaRoleCodes.has(u.role_code)).length, [users, mfaRoleCodes]);
+
+  const filteredUsers = useMemo(() => {
+    const q = userQuery.toLowerCase();
+    return users.filter((u) => u.email.toLowerCase().includes(q) || u.role_name.toLowerCase().includes(q));
+  }, [users, userQuery]);
 
   async function createUser(e: React.FormEvent) {
     e.preventDefault();
@@ -88,13 +98,45 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="grid gap-5 max-w-5xl">
-      <h1 className="text-2xl" style={{ fontFamily: "var(--font-display)" }}>
-        Administration
-      </h1>
+    <div className="grid gap-5 max-w-6xl">
+      <div>
+        <h1 className="text-2xl" style={{ fontFamily: "var(--font-display)" }}>
+          Administration
+        </h1>
+        <p className="text-sm" style={{ color: "var(--color-ink-soft)" }}>
+          {users.length} {users.length === 1 ? "user" : "users"} · {roles.length} roles
+        </p>
+      </div>
 
       {error && <div className="card chip-bad">{error}</div>}
       {notice && <div className="card chip-ok break-all">{notice}</div>}
+
+      <div className="grid gap-3 sm:grid-cols-3">
+        <div className="card flex items-center justify-between">
+          <span className="text-sm font-medium" style={{ color: "var(--color-ink-soft)" }}>
+            Active users
+          </span>
+          <span className="text-lg font-bold px-3 py-1 rounded-full" style={{ background: "var(--color-ok-tint)", color: "var(--color-ok)" }}>
+            {activeCount}
+          </span>
+        </div>
+        <div className="card flex items-center justify-between">
+          <span className="text-sm font-medium" style={{ color: "var(--color-ink-soft)" }}>
+            Inactive users
+          </span>
+          <span className="text-lg font-bold px-3 py-1 rounded-full" style={{ background: "var(--color-surface-2)", color: "var(--color-ink-soft)" }}>
+            {users.length - activeCount}
+          </span>
+        </div>
+        <div className="card flex items-center justify-between">
+          <span className="text-sm font-medium" style={{ color: "var(--color-ink-soft)" }}>
+            MFA-required logins
+          </span>
+          <span className="text-lg font-bold px-3 py-1 rounded-full" style={{ background: "var(--color-warn-tint)", color: "var(--color-warn)" }}>
+            {mfaUserCount}
+          </span>
+        </div>
+      </div>
 
       <div className="flex gap-2">
         <button className={`chip ${tab === "users" ? "chip-info" : "chip-mute"}`} onClick={() => setTab("users")}>
@@ -107,7 +149,11 @@ export default function AdminPage() {
 
       {tab === "users" && (
         <div className="grid gap-4">
-          <div className="flex justify-end">
+          <div className="flex justify-between items-center flex-wrap gap-2">
+            <div className="relative">
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "var(--color-ink-faint)" }} />
+              <input className="input pl-9 w-64" placeholder="Search email, role…" value={userQuery} onChange={(e) => setUserQuery(e.target.value)} />
+            </div>
             <button className="btn btn-primary" onClick={() => setShowNew((s) => !s)}>
               <Plus size={16} /> New user
             </button>
@@ -158,7 +204,7 @@ export default function AdminPage() {
                 </tr>
               </thead>
               <tbody>
-                {users.map((u) => (
+                {filteredUsers.map((u) => (
                   <tr key={u.id} style={{ borderTop: "1px solid var(--color-line)" }}>
                     <td className="py-2">{u.email}</td>
                     <td className="py-2">{u.role_name}</td>
@@ -185,6 +231,11 @@ export default function AdminPage() {
                 ))}
               </tbody>
             </table>
+            {filteredUsers.length === 0 && (
+              <p className="text-sm py-6 text-center" style={{ color: "var(--color-ink-faint)" }}>
+                {users.length === 0 ? "No users yet." : "No users match this search."}
+              </p>
+            )}
           </div>
         </div>
       )}

@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.deps import User, get_current_user, require_perm
 from app.core.permissions import permission_code
+from app.core.scope import Scope, scope_for_role
 from app.models import Asset, AssetCondition, AssetStatus, Employee, RequestType
 from app.schemas.asset import (
     AssetDisposeIn,
@@ -47,9 +48,38 @@ def _next_asset_code(db: Session) -> str:
     return f"AST-{n:05d}"
 
 
+def _assert_in_scope(user: User, asset: Asset) -> None:
+    """A division-scoped role (e.g. Division Head) sees/acts on its own
+    division's assets and org-wide ones (division_id is None), never
+    another division's — mirrors the filter in _scoped_query below, but
+    as a single-row check for the by-id endpoints."""
+    scope = scope_for_role(user.role.code)
+    if scope in (Scope.organisation,):
+        return
+    if scope == Scope.division:
+        if asset.division_id is not None and asset.division_id != user.division_id:
+            raise HTTPException(status_code=403, detail="Not in your division")
+        return
+    raise HTTPException(status_code=403, detail="Not permitted")
+
+
+def _scoped_query(db: Session, user: User):
+    from sqlalchemy import or_
+
+    scope = scope_for_role(user.role.code)
+    q = db.query(Asset)
+    if scope == Scope.organisation:
+        return q
+    if scope == Scope.division:
+        if user.division_id is None:
+            return q.filter(False)
+        return q.filter(or_(Asset.division_id == user.division_id, Asset.division_id.is_(None)))
+    return q.filter(False)
+
+
 @router.get("", response_model=list[AssetOut])
 def list_assets(status: AssetStatus | None = None, db: Session = Depends(get_db), user: User = Depends(VIEW)):
-    q = db.query(Asset)
+    q = _scoped_query(db, user)
     if status is not None:
         q = q.filter(Asset.status == status)
     return [_out(a) for a in q.order_by(Asset.asset_code).all()]
@@ -69,6 +99,7 @@ def get_asset(asset_id: int, db: Session = Depends(get_db), user: User = Depends
     asset = db.get(Asset, asset_id)
     if asset is None:
         raise HTTPException(status_code=404, detail="Asset not found")
+    _assert_in_scope(user, asset)
     return _out(asset)
 
 
@@ -93,6 +124,7 @@ def _get_asset_or_404(db: Session, asset_id: int) -> Asset:
 @router.post("/{asset_id}/issue", response_model=AssetOut)
 def issue_asset(asset_id: int, payload: AssetIssueIn, db: Session = Depends(get_db), user: User = Depends(EDIT)):
     asset = _get_asset_or_404(db, asset_id)
+    _assert_in_scope(user, asset)
     try:
         asset_service.assert_available_for_issue(asset)
     except ValueError as exc:
@@ -122,6 +154,8 @@ def return_asset(asset_id: int, payload: AssetReturnIn, db: Session = Depends(ge
     is_self = emp is not None and asset.custodian_employee_id == emp.id
     if not is_self and not user.has_permission(permission_code("asset", "edit")):
         raise HTTPException(status_code=403, detail="Not permitted")
+    if not is_self:
+        _assert_in_scope(user, asset)
     if asset.status != AssetStatus.issued:
         raise HTTPException(status_code=400, detail=f"Asset is {asset.status.value}, not currently issued")
 
@@ -168,6 +202,7 @@ def _on_return_decided(db: Session, asset_id: int, outcome) -> None:
 @router.post("/{asset_id}/transfer", response_model=AssetOut)
 def transfer_asset(asset_id: int, payload: AssetTransferIn, db: Session = Depends(get_db), user: User = Depends(EDIT)):
     asset = _get_asset_or_404(db, asset_id)
+    _assert_in_scope(user, asset)
     if asset.status != AssetStatus.issued:
         raise HTTPException(status_code=400, detail=f"Asset is {asset.status.value}, not currently issued")
     to_employee = db.get(Employee, payload.to_employee_id)
@@ -184,6 +219,7 @@ def transfer_asset(asset_id: int, payload: AssetTransferIn, db: Session = Depend
 @router.post("/{asset_id}/repair", response_model=AssetOut)
 def log_repair(asset_id: int, payload: AssetRepairIn, db: Session = Depends(get_db), user: User = Depends(EDIT)):
     asset = _get_asset_or_404(db, asset_id)
+    _assert_in_scope(user, asset)
     asset_service.record_movement(db, asset, "repair", notes=payload.notes)
     asset.condition = payload.condition
     db.commit()
@@ -196,6 +232,7 @@ def dispose_asset(asset_id: int, payload: AssetDisposeIn, db: Session = Depends(
     from datetime import date as date_cls
 
     asset = _get_asset_or_404(db, asset_id)
+    _assert_in_scope(user, asset)
     if asset.status == AssetStatus.issued:
         raise HTTPException(status_code=400, detail="Cannot dispose an asset that is currently issued")
     asset.status = AssetStatus.disposed

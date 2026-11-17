@@ -58,6 +58,21 @@ Rule: an item is ticked only when its tests pass. UI is built only after the cli
 - [ ] 9.5.5 Geo-fence map-drawing admin screen (not built — fences are set via seed data / API only)
 - [ ] 9.5.6 Workflow chain admin screen (not built — defaults from `workflow_seed.py` are usable as-is via the API)
 
+## Phase 11 — Security audit fixes (post-launch-review pass)
+- [x] 11.1 `DEV_FIXED_OTP` defaults off; app refuses to start if set alongside a real `SMTP_HOST`
+- [x] 11.2 Scope check added to `employee_confidential` endpoints — a division-scoped role granted that permission can no longer reach another division's bank/statutory data
+- [x] 11.3 Division/project scope filtering added to every asset endpoint (list/get/issue/transfer/repair/dispose)
+- [x] 11.4 Rate limiting on `/api/auth/login` (10/15min) and `/api/auth/verify-otp` (5/10min), keyed by email
+- [x] 11.5 Selfie upload rejected on size before decode/decompress, using the existing `MAX_UPLOAD_MB` limit
+- [x] 11.6 JWT-in-localStorage tradeoff documented in CLAUDE.md as an accepted risk, not silently left unexamined
+- [x] 11.7 UI/UX pass, test-first throughout (backend) and build-checked after every page (frontend):
+  - [x] 11.7.1 Visual density: every module page (employees, assets, leave, attendance, payroll, appraisal, recruitment, admin) widened and given real summary-stat strips, search/filters, and proper empty states instead of bare lists
+  - [x] 11.7.2 Dashboard: fixed the 5th KPI tile and the broken per-division bar (was `width: n*10`, capped/wrong past 10 staff) — now a real present/field-duty/on-leave composition chart plus an activity feed, all tiles linked to their module
+  - [x] 11.7.3 Global smart search (`GET /api/search`, `GlobalSearch.tsx` in the top bar on every screen) across people/requests/assets — permission- and scope-gated identically to each owning module, never a visibility leak
+  - [x] 11.7.4 Kanban-style boards: Approvals Center (board/list toggle, grouped by request type) and Recruitment (candidate pipeline columns by stage)
+  - [x] 11.7.5 In-app report preview (`/preview` JSON endpoints alongside every existing `/export` one) so reports can be read before downloading Excel
+  - [x] 11.7.6 Wired up the orphaned `payroll_cost_by_division_for_run` service function as a real preview + export endpoint
+
 ## Phase 10 — Migration and go-live
 - [ ] 10.1 Import templates, row validation, error and count reports
 - [ ] 10.2 Security, 300-user performance, backup/restore tests; deployment; UAT

@@ -42,6 +42,18 @@ from app.core.database import engine, get_db  # noqa: E402
 from app.main import app  # noqa: E402
 
 
+@pytest.fixture(autouse=True)
+def _clear_rate_limit_state():
+    """The login/OTP rate limiter (app.core.rate_limit) keeps in-process
+    state that DB transaction rollback never touches — clear it between
+    tests so one test's attempts can't trip another's assertions."""
+    from app.core.rate_limit import _attempts
+
+    _attempts.clear()
+    yield
+    _attempts.clear()
+
+
 @pytest.fixture()
 def db():
     connection = engine.connect()

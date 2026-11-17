@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { Camera, MapPin, LogIn, LogOut } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Camera, MapPin, LogIn, LogOut, Search } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 
@@ -47,6 +47,11 @@ export default function AttendancePage() {
   const streamRef = useRef<MediaStream | null>(null);
 
   const canRegister = hasPermission("attendance:create");
+  const canApprove = hasPermission("attendance:approve");
+
+  const [register, setRegister] = useState<AttendanceRecord[]>([]);
+  const [registerQuery, setRegisterQuery] = useState("");
+  const [registerDate, setRegisterDate] = useState(() => new Date().toISOString().slice(0, 10));
 
   const load = () => {
     api.get<AttendanceRecord | null>("/api/attendance/today").then(setToday).catch(() => {});
@@ -54,6 +59,24 @@ export default function AttendancePage() {
   };
 
   useEffect(load, []);
+
+  useEffect(() => {
+    if (!canApprove) return;
+    api.get<AttendanceRecord[]>(`/api/attendance/register?for_date=${registerDate}`).then(setRegister).catch(() => {});
+  }, [canApprove, registerDate]);
+
+  const registerCounts = useMemo(() => {
+    const byStatus: Record<string, number> = {};
+    for (const r of register) byStatus[r.status] = (byStatus[r.status] ?? 0) + 1;
+    return byStatus;
+  }, [register]);
+
+  const filteredRegister = useMemo(() => {
+    const q = registerQuery.toLowerCase();
+    return register.filter((r) => r.employee_name.toLowerCase().includes(q));
+  }, [register, registerQuery]);
+
+  const monthPresentDays = useMemo(() => history.filter((r) => r.status === "present").length, [history]);
 
   async function openCamera() {
     setError("");
@@ -120,12 +143,44 @@ export default function AttendancePage() {
   }
 
   return (
-    <div className="grid gap-5 max-w-3xl">
+    <div className="grid gap-5 max-w-6xl">
       <h1 className="text-2xl" style={{ fontFamily: "var(--font-display)" }}>
         Attendance
       </h1>
 
       {error && <div className="card chip-bad">{error}</div>}
+
+      {canRegister && history.length > 0 && (
+        <div className="grid gap-3 sm:grid-cols-3">
+          <div className="card flex items-center justify-between">
+            <span className="text-sm font-medium" style={{ color: "var(--color-ink-soft)" }}>
+              Present (last 90 days)
+            </span>
+            <span className="text-lg font-bold px-3 py-1 rounded-full" style={{ background: "var(--color-ok-tint)", color: "var(--color-ok)" }}>
+              {monthPresentDays}
+            </span>
+          </div>
+          <div className="card flex items-center justify-between">
+            <span className="text-sm font-medium" style={{ color: "var(--color-ink-soft)" }}>
+              Total records
+            </span>
+            <span className="text-lg font-bold px-3 py-1 rounded-full" style={{ background: "var(--color-surface-2)", color: "var(--color-ink-soft)" }}>
+              {history.length}
+            </span>
+          </div>
+          <div className="card flex items-center justify-between">
+            <span className="text-sm font-medium" style={{ color: "var(--color-ink-soft)" }}>
+              Pending approval
+            </span>
+            <span
+              className="text-lg font-bold px-3 py-1 rounded-full"
+              style={{ background: "var(--color-warn-tint)", color: "var(--color-warn)" }}
+            >
+              {history.filter((r) => r.status === "pending_approval").length}
+            </span>
+          </div>
+        </div>
+      )}
 
       {canRegister && (
         <div className="card grid gap-3">
@@ -221,6 +276,68 @@ export default function AttendancePage() {
           </div>
         )}
       </div>
+
+      {canApprove && (
+        <div className="card">
+          <div className="flex items-center justify-between flex-wrap gap-3 mb-3">
+            <h3 className="text-base font-semibold">Team register</h3>
+            <div className="flex items-center gap-2">
+              <input type="date" className="input h-8 text-xs w-36" value={registerDate} onChange={(e) => setRegisterDate(e.target.value)} />
+              <div className="relative">
+                <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2" style={{ color: "var(--color-ink-faint)" }} />
+                <input
+                  className="input pl-8 h-8 text-xs w-48"
+                  placeholder="Search employee…"
+                  value={registerQuery}
+                  onChange={(e) => setRegisterQuery(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex gap-2 flex-wrap mb-3">
+            <span className="chip chip-ok">{registerCounts.present ?? 0} present</span>
+            <span className="chip chip-bad">{registerCounts.absent ?? 0} absent</span>
+            <span className="chip chip-info">{registerCounts.on_leave ?? 0} on leave</span>
+            <span className="chip chip-warn">{registerCounts.pending_approval ?? 0} pending</span>
+          </div>
+
+          {filteredRegister.length === 0 ? (
+            <p className="text-sm py-6 text-center" style={{ color: "var(--color-ink-faint)" }}>
+              No attendance records for this date.
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr style={{ color: "var(--color-ink-faint)" }} className="text-left">
+                    <th className="pb-2 font-medium">Employee</th>
+                    <th className="pb-2 font-medium">Site</th>
+                    <th className="pb-2 font-medium">In / Out</th>
+                    <th className="pb-2 font-medium">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredRegister.map((r) => (
+                    <tr key={r.id} style={{ borderTop: "1px solid var(--color-line)" }}>
+                      <td className="py-2 font-medium">{r.employee_name}</td>
+                      <td className="py-2">{r.site_name ?? "—"}</td>
+                      <td className="py-2">
+                        {r.check_in_at ? new Date(r.check_in_at).toLocaleTimeString() : "—"}
+                        {" / "}
+                        {r.check_out_at ? new Date(r.check_out_at).toLocaleTimeString() : "—"}
+                      </td>
+                      <td className="py-2">
+                        <span className={`chip ${STATUS_CHIP[r.status] ?? "chip-mute"}`}>{r.status.replace(/_/g, " ")}</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

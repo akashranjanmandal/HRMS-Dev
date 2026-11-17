@@ -37,14 +37,6 @@ const VACANCY_CHIP: Record<string, string> = {
   closed: "chip-bad",
 };
 
-const STAGE_CHIP: Record<string, string> = {
-  applied: "chip-mute",
-  shortlisted: "chip-info",
-  interviewed: "chip-warn",
-  selected: "chip-ok",
-  rejected: "chip-bad",
-};
-
 export default function RecruitmentPage() {
   const { hasPermission } = useAuth();
   const [vacancies, setVacancies] = useState<Vacancy[]>([]);
@@ -122,11 +114,16 @@ export default function RecruitmentPage() {
   }
 
   return (
-    <div className="grid gap-5 max-w-5xl">
+    <div className="grid gap-5 max-w-6xl">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <h1 className="text-2xl" style={{ fontFamily: "var(--font-display)" }}>
-          Recruitment
-        </h1>
+        <div>
+          <h1 className="text-2xl" style={{ fontFamily: "var(--font-display)" }}>
+            Recruitment
+          </h1>
+          <p className="text-sm" style={{ color: "var(--color-ink-soft)" }}>
+            {vacancies.length} {vacancies.length === 1 ? "vacancy" : "vacancies"}
+          </p>
+        </div>
         {canCreate && (
           <button className="btn btn-primary" onClick={() => setShowNew((s) => !s)}>
             <Plus size={16} /> New vacancy
@@ -195,14 +192,21 @@ export default function RecruitmentPage() {
               <span className={`chip ${VACANCY_CHIP[v.status] ?? "chip-mute"}`}>{v.status.replace(/_/g, " ")}</span>
             </button>
           ))}
-          {vacancies.length === 0 && <p className="text-sm" style={{ color: "var(--color-ink-faint)" }}>No vacancies yet.</p>}
+          {vacancies.length === 0 && (
+            <p className="text-sm py-6 text-center" style={{ color: "var(--color-ink-faint)" }}>
+              No vacancies yet — create one to get started.
+            </p>
+          )}
         </div>
 
         <div className="card">
           {!selected ? (
-            <p className="text-sm" style={{ color: "var(--color-ink-faint)" }}>
-              Select a vacancy to see candidates.
-            </p>
+            <div className="py-10 text-center grid gap-1">
+              <p className="text-sm font-medium">Select a vacancy to see its candidate pipeline.</p>
+              <p className="text-xs" style={{ color: "var(--color-ink-faint)" }}>
+                Pick one from the list on the left.
+              </p>
+            </div>
           ) : (
             <div className="grid gap-4">
               <div className="flex items-center justify-between flex-wrap gap-2">
@@ -217,50 +221,49 @@ export default function RecruitmentPage() {
                 )}
               </div>
 
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr style={{ color: "var(--color-ink-faint)" }} className="text-left">
-                      <th className="pb-2 font-medium">Candidate</th>
-                      <th className="pb-2 font-medium">Contact</th>
-                      <th className="pb-2 font-medium">Stage</th>
-                      <th className="pb-2 font-medium"></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {candidates.map((c) => (
-                      <tr key={c.id} style={{ borderTop: "1px solid var(--color-line)" }}>
-                        <td className="py-2 font-medium">{c.full_name}</td>
-                        <td className="py-2 text-xs" style={{ color: "var(--color-ink-faint)" }}>
-                          {c.email}
-                        </td>
-                        <td className="py-2">
-                          <span className={`chip ${STAGE_CHIP[c.stage] ?? "chip-mute"}`}>{c.stage}</span>
-                        </td>
-                        <td className="py-2 text-right">
-                          {canApprove && c.stage !== "selected" && c.stage !== "rejected" && (
-                            <div className="flex gap-1 justify-end flex-wrap">
-                              {STAGES.filter((s) => s !== c.stage && s !== "selected").map((s) => (
-                                <button key={s} className="btn btn-ghost h-7 px-2 text-xs" onClick={() => moveStage(c, s)}>
-                                  {s}
-                                </button>
-                              ))}
-                              <button className="btn btn-primary h-7 px-2 text-xs" onClick={() => select(c)}>
-                                Select
-                              </button>
+              {candidates.length === 0 ? (
+                <p className="text-sm py-6 text-center" style={{ color: "var(--color-ink-faint)" }}>
+                  No candidates have applied yet.
+                </p>
+              ) : (
+                <div className="grid gap-3 md:grid-cols-5 items-start overflow-x-auto">
+                  {STAGES.map((stage) => {
+                    const rows = candidates.filter((c) => c.stage === stage);
+                    return (
+                      <div key={stage} className="grid gap-2 content-start min-w-[180px]">
+                        <div className="flex items-center justify-between px-1">
+                          <h4 className="text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--color-ink-faint)" }}>
+                            {stage}
+                          </h4>
+                          <span className="chip chip-mute">{rows.length}</span>
+                        </div>
+                        <div className="grid gap-2">
+                          {rows.map((c) => (
+                            <div key={c.id} className="card grid gap-2 p-3">
+                              <p className="font-medium text-sm">{c.full_name}</p>
+                              <p className="text-xs truncate" style={{ color: "var(--color-ink-faint)" }}>
+                                {c.email}
+                              </p>
+                              {canApprove && c.stage !== "selected" && c.stage !== "rejected" && (
+                                <div className="flex gap-1 flex-wrap">
+                                  {STAGES.filter((s) => s !== c.stage && s !== "selected").map((s) => (
+                                    <button key={s} className="btn btn-ghost h-6 px-1.5 text-[10px]" onClick={() => moveStage(c, s)}>
+                                      {s}
+                                    </button>
+                                  ))}
+                                  <button className="btn btn-primary h-6 px-1.5 text-[10px]" onClick={() => select(c)}>
+                                    Select
+                                  </button>
+                                </div>
+                              )}
                             </div>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                {candidates.length === 0 && (
-                  <p className="text-sm py-3" style={{ color: "var(--color-ink-faint)" }}>
-                    No candidates have applied yet.
-                  </p>
-                )}
-              </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
         </div>

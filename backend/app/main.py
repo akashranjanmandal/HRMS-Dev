@@ -19,6 +19,7 @@ from app.routers import (
     payroll,
     report,
     role,
+    search,
     user,
     workflow,
 )
@@ -53,6 +54,7 @@ ROUTERS = [
     payroll.router,
     report.router,
     role.router,
+    search.router,
     user.router,
     workflow.router,
 ]

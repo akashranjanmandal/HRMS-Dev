@@ -213,6 +213,27 @@ def test_invalid_base64_selfie_rejected(client, db):
     assert r.status_code == 400
 
 
+def test_oversized_selfie_is_rejected_before_decoding(client, db):
+    from app.core.config import settings
+
+    div = _make_division(db)
+    staff = _make_user(db, "field_staff")
+    _make_employee(db, div.id, staff)
+    _make_site(db)
+    headers = _login(client, staff)
+
+    # Larger than settings.max_upload_bytes once decoded — never valid
+    # JPEG content, since the point is to reject on size alone, before
+    # the server would otherwise try to decode/compress it.
+    oversized = base64.b64encode(b"0" * (settings.max_upload_bytes + 1024)).decode()
+    r = client.post(
+        "/api/attendance/check-in",
+        json={"lat": INSIDE_LAT, "lng": INSIDE_LNG, "accuracy_m": 12, "selfie_base64": oversized},
+        headers=headers,
+    )
+    assert r.status_code == 413
+
+
 # ----------------------------------------------------------------- check-out
 def test_check_out_after_check_in(client, db):
     div = _make_division(db)
